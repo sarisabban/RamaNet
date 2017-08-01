@@ -375,7 +375,7 @@ for structures in range(2):
 	os.mkdir(folder)
 	os.chdir(folder)
 	#Start Protocol
-	DeNovo(1)
+	DeNovo(100)
 	pose = pose_from_pdb('DeNovo.pdb')
 	Design.Pack(pose)
 	Fragment.Make(pose)
