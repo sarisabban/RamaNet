@@ -155,7 +155,7 @@ class Design():
 			MC = GenericMonteCarloMover()						#Call Monter Carlo Class
 			MC.set_mover(mover)							#Load The Mover
 			MC.set_scorefxn(scorefxn)						#Set score function
-			MC.set_maxtrials(1)							#Set number of monte carlo loops
+			MC.set_maxtrials(10)							#Set number of monte carlo loops
 			MC.set_temperature(1)							#Set temperature
 			MC.set_preapply(True)							#To apply Boltzmann accept/reject to all applications of the mover (always use False)
 			MC.set_drift(True)							#Make current pose = next iteration pose
