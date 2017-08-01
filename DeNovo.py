@@ -360,7 +360,7 @@ def DeNovo(number_of_output):
 		Rg = ScoreFunction()
 		Rg.set_weight(pyrosetta.rosetta.core.scoring.rg , 1)
 		Value = Rg(pose)
-		print(Value , '<---------------------------------------')##################
+		#print(Value)
 		if Value <= RgValue:
 			RgValue = Value
 			PoseFinal.assign(pose)
