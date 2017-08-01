@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-                               #Modules to download---> #      #       #	#
-import sys , os , re , time , datetime , subprocess , zeep , numpy , Bio.PDB , bs4 , random , requests , urllib.request
+                               #Modules to download---> #      #         #
+import sys , os , re , time , datetime , subprocess , numpy , Bio.PDB , bs4 , random , requests , urllib.request
 
 #Import PyRosetta, its Tools, and its Database
 from pyrosetta import *
@@ -290,7 +290,7 @@ class Fragment():
 		data.close()
 		gnuplot = open('gnuplot_sets' , 'w')
 		gnuplot.write("""set terminal postscript
-set output './plot.pdf'
+set output './plot_frag.pdf'
 set encoding iso_8859_1
 set term post eps enh color
 set xlabel 'Position'
@@ -319,52 +319,66 @@ def DeNovo(number_of_output):
 	temp.write('ATOM      1  N   ASP C   1      33.210  65.401  53.583  1.00 55.66           N  \nATOM      2  CA  ASP C   1      33.590  64.217  54.411  1.00 55.66           C  \nATOM      3  C   ASP C   1      33.574  62.950  53.542  1.00 52.88           C  \nATOM      4  O   ASP C   1      34.516  62.724  52.780  1.00 50.94           O  \nATOM      5  CB  ASP C   1      32.656  64.090  55.624  1.00 58.39           C  ')
 	temp.close()
 	pose = pose_from_pdb('temp.pdb')
-	while True:
-		for nterm in range(number_of_output):							#Number of different output structures
-			#2 - Generate blueprint file
-			size = random.randint(120 , 130)						#Random protein size
-			#3 - Construct the loops
-			info = list()
-			for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
-				Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
-				if Loop == 0:
-					position = random.randint(1 , size)				#Randomly choose where these loops are added
-					info.append((position , 3))
-				else:
-					position = random.randint(1 , size)
-					info.append((position , 4))
-			#4 - Generate the blueprint file
-			blueprint = open('blueprint' , 'w')
-			for residues in range(size):
-				for x in info:
-					if residues == x[0]:
-						for y in range(x[1]):
-							blueprint.write('0 V ' + 'L' + 'X R\n')		#Loop insert
-				blueprint.write('0 V ' + 'H' + 'X R\n')					#Helix insert
-			blueprint.close()
-			#5 - Run the BluePrintBDR mover
-			mover = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
-			mover.num_fragpick(200)
-			mover.use_fullmer(True)
-			mover.use_abego_bias(True)
-			mover.use_sequence_bias(False)
-			mover.max_linear_chainbreak(0.07)
-			mover.ss_from_blueprint(True)
-			mover.dump_pdb_when_fail('')
-			mover.set_constraints_NtoC(-1.0)
-			mover.set_blueprint('blueprint')
-			mover.apply(pose)
-			pose.dump_pdb('DeNovo_' + str(nterm + 1) + '.pdb')
-			os.remove('blueprint')
-			#Calculate Radius of Gyration (Rg)
-			Rg = ScoreFunction()
-			Rg.set_weight(pyrosetta.rosetta.core.scoring.rg , 1)
-			value = Rg(pose)
-			print(value , '<---------------------------------------')
+	RgValue = 9999999999
+	PoseFinal = Pose()
+	for nterm in range(number_of_output):							#Number of different output structures
+		#2 - Generate blueprint file
+		size = random.randint(120 , 130)						#Random protein size
+		#3 - Construct the loops
+		info = list()
+		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
+			Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
+			if Loop == 0:
+				position = random.randint(1 , size)				#Randomly choose where these loops are added
+				info.append((position , 3))
+			else:
+				position = random.randint(1 , size)
+				info.append((position , 4))
+		#4 - Generate the blueprint file
+		blueprint = open('blueprint' , 'w')
+		for residues in range(size):
+			for x in info:
+				if residues == x[0]:
+					for y in range(x[1]):
+						blueprint.write('0 V ' + 'L' + 'X R\n')		#Loop insert
+			blueprint.write('0 V ' + 'H' + 'X R\n')					#Helix insert
+		blueprint.close()
+		#5 - Run the BluePrintBDR mover
+		mover = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
+		mover.num_fragpick(200)
+		mover.use_fullmer(True)
+		mover.use_abego_bias(True)
+		mover.use_sequence_bias(False)
+		mover.max_linear_chainbreak(0.07)
+		mover.ss_from_blueprint(True)
+		mover.dump_pdb_when_fail('')
+		mover.set_constraints_NtoC(-1.0)
+		mover.set_blueprint('blueprint')
+		mover.apply(pose)
+		os.remove('blueprint')
+		#Calculate Radius of Gyration (Rg) and choose lowest Rg score
+		Rg = ScoreFunction()
+		Rg.set_weight(pyrosetta.rosetta.core.scoring.rg , 1)
+		Value = Rg(pose)
+		print(Value , '<---------------------------------------')##################
+		if Value <= RgValue:
+			RgValue = Value
+			PoseFinal.assign(pose)
+		else:
+			continue
+	PoseFinal.dump_pdb('DeNovo.pdb')
 	os.remove('temp.pdb')
 #--------------------------------------------------------------------------------------------------------------------------------------
-DeNovo(10)
-#pose = pose_from_pdb('DeNovo.pdb')
-#Design.Pack(pose)
-#Fragment.Make(pose)
-#Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')
+for structures in range(2):
+	directory = os.getcwd()
+	folder = 'structure_' + str(structures + 1)
+	os.mkdir(folder)
+	os.chdir(folder)
+	#Start Protocol
+	DeNovo(1)
+	pose = pose_from_pdb('DeNovo.pdb')
+	Design.Pack(pose)
+	Fragment.Make(pose)
+	Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')
+	#End Protocol
+	os.chdir(directory)
