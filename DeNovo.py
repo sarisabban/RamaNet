@@ -1,6 +1,6 @@
 #!/usr/bin/python3
                                #Modules to download---> #      #         #
-import sys , os , re , time , datetime , subprocess , numpy , Bio.PDB , bs4 , random , requests , urllib.request
+import sys , os , re , time , datetime , subprocess , numpy , Bio.PDB , bs4 , random , requests , urllib.request , zeep
 
 #Import PyRosetta, its Tools, and its Database
 from pyrosetta import *
@@ -16,6 +16,17 @@ from pyrosetta.rosetta.core.scoring.packstat import *
 from pyrosetta.rosetta.core.pack.task.operation import *
 from pyrosetta.rosetta.core.pack.task import TaskFactory
 init()
+
+#Terminal Text Colours
+Black 	= '\x1b[30m'
+Red	= '\x1b[31m'
+Green	= '\x1b[32m'
+Yellow	= '\x1b[33m'
+Blue	= '\x1b[34m'
+Purple	= '\x1b[35m'
+Cyan	= '\x1b[36m'
+White	= '\x1b[37m'
+Cancel	= '\x1b[0m'
 
 #RosettaRelax
 def Relax(pose):
@@ -112,7 +123,64 @@ class Design():
 			#3 - Relax pose
 			Relax(pose)
 		score3_of_design_after_relax = scorefxn(pose)					#Measure score of designed pose
-		pose.dump_pdb('structure.pdb')							#Export final pose into a .pdb structure file
+		#pose.dump_pdb('structure.pdb')							#Export final pose into a .pdb structure file
+		print(score1_original_before_relax)
+		print(score2_original_after_relax)
+		print(score3_of_design_after_relax)
+	#Design The Structure Once Layer At A Time
+	def Layer(pose):
+		''' Applies RosettaDesign to change the whole structure's amino acids (one layer at a time) while maintaining the same backbone. It is efficient and faster than the previous method (Design_Full) '''
+		''' Just updates the pose with the new structure '''
+		#Relax original structure
+		scorefxn = get_fa_scorefxn()							#Call the score function
+		score1_original_before_relax = scorefxn(pose)					#Measure score before relaxing
+		Relax(pose)									#Relax structure
+		score2_original_after_relax = scorefxn(pose)					#Measure score after relaxing
+		#Preform RosettaDesign one layer at a time
+		for inter in range(3):
+			#1 - Get SASA Layers
+			sasa = SASA(pose)
+			surface = sasa[0]
+			boundry = sasa[1]
+			core = sasa[2]
+			#2 - Preform RosettaDesign on each layer
+			#Design core
+			task_pack = standard_packer_task(pose)
+			pack_mover = PackRotamersMover(scorefxn , task_pack)
+			task_pack.temporarily_fix_everything()					#To prevent all amino acids from being designed
+			for AA in core:
+				coreAA = pose.residue(AA).name()
+				if coreAA == 'CYS:disulfide':
+					continue
+				else:
+					task_pack.temporarily_set_pack_residue(AA , True)	#To move only spesific amino acids
+			pack_mover.apply(pose)
+			#Design boundery
+			task_pack = standard_packer_task(pose)
+			pack_mover = PackRotamersMover(scorefxn , task_pack)
+			task_pack.temporarily_fix_everything()					#To prevent all amino acids from being designed
+			for AA in boundry:
+				boundAA = pose.residue(AA).name()
+				if boundAA == 'CYS:disulfide':
+					continue
+				else:
+					task_pack.temporarily_set_pack_residue(AA , True)	#To move only spesific amino acids
+			pack_mover.apply(pose)
+			#Design surface
+			task_pack = standard_packer_task(pose)
+			pack_mover = PackRotamersMover(scorefxn , task_pack)
+			task_pack.temporarily_fix_everything()					#To prevent all amino acids from being designed
+			for AA in surface:
+				surfAA = pose.residue(AA).name()
+				if surfAA == 'CYS:disulfide':
+					continue
+				else:
+					task_pack.temporarily_set_pack_residue(AA , True)	#To move only spesific amino acids
+			pack_mover.apply(pose)
+			#3 - Relax pose
+			Relax(pose)
+		score3_of_design_after_relax = scorefxn(pose)					#Measure score of designed pose
+		#pose.dump_pdb('structure.pdb')							#Export final pose into a .pdb structure file
 		print(score1_original_before_relax)
 		print(score2_original_after_relax)
 		print(score3_of_design_after_relax)
@@ -309,6 +377,102 @@ exit""")
 		os.system('gnuplot < gnuplot_sets')
 		os.remove('gnuplot_sets')
 		os.remove('temp.dat')
+	#Calculates The Average RMSD of The Fragments
+	def Average():
+		''' Uses the RMSDvsPosition.dat to average out the fragment RMSD over the entire protein structure. Can only be used after the Fragment.RMSD() function '''
+		''' Prints out the average RMSD '''
+		data = open('RMSDvsPosition.dat' , 'r')
+		value = 0
+		for line in data:
+			line = line.split()
+			RMSD = float(line[1])
+			value = value + RMSD
+			count = int(line[0])
+		Average_RMSD = value / count
+		print(Average_RMSD)
+
+
+#PSIPRED
+def PSIPRED(pose):
+	''' Submits an amino acid sequence to the PsiPred server at UCL for accurate secondary structure prediction, returns a string alignment with the prediction '''
+	''' Generates the PSIPRED.psipred file '''
+	#The PsiPred server at UCL uses SOAP to allow us to interact with it (the zeep module allows the of SOAP in python)
+	client = zeep.Client('http://bioinf.cs.ucl.ac.uk/psipred_api/wsdl')						#Load the PSIPRED WSDL into a variable
+	email = 'acresearch@icloud.com'											#Email is required for submission
+	title = 'scaffold'												#A submission title is required for submission
+	#Submit
+	sequence = pose.sequence()
+	print('Submitting Sequence: ' + sequence)
+	Submission = client.service.PsipredSubmit(sequence , email , title , 'True' , 'False' , 'False' , 'all')	#Method from WSDL to submit a protein's sequence for PSIPRED, zeep returns a dictionary so save to a variable
+	job_id = Submission['job_id']											#Get the job ID from the dictionary for next step
+	print('Job ID: ' + job_id)
+	print('LINK: http://bioinf.cs.ucl.ac.uk/psipred/result/' + job_id)
+	print(Green + '[+] Sequence submitted to PSIPRED server at University College London' + Cancel)
+	#Get Result
+	#Not an infinite loop, this is to break the script (after 6:00 hours) if there are problems with the PSIPRED server (it sometimes happens)
+	for attempt in ['0:15' , '0:30' , '0:45' , '1:00' , '1:15' , '1:30' , '1:45' , '2:00' , '2:15' , '2:30' , '2:45' , '3:00' , '3:15' , '3:30' , '3:45' , '4:00' , '4:15' , '4:30' , '4:45' , '5:00' , '5:15' , '5:30' , '5:45' , '6:00']:
+		Result = client.service.PsipredResult(job_id)								#Quiry for results, zeep returns a dictionary so save to a variable
+		URL = Result['psipred_results']										#Get the result's download file's URL
+		try:
+			if URL == None:											#if no URL available (because server is still running) check again in 15 minutes
+				print(Red + '[-] PSIPRED server calculation not yet complete - check again in 15 minutes' + Cancel)
+				time.sleep(300)
+				continue
+			else:
+				os.system('wget ' + URL)								#When result's download file's URL is available download the file
+				print(Green + '[+] PSIPRED server calculation complete' + Cancel)
+				break
+		except Exception as TheError:
+			print(Red + '[-] ERROR: No response from server' + Cancel)
+	#Rename
+	time.sleep(3)
+	URL = URL.split('/')
+	os.rename(URL[5] , 'temp.psipred')
+	#Modify to be aligned
+	temp = open('temp.psipred' , 'r')	#Open the PSIPRED's downloaded file
+	PSI = open('PSIPRED.psipred' , 'w')	#Generate the final PSIPRED.psipred file
+	Conf = list()
+	Pred = list()
+	AA = list()
+	for line in temp:
+		if line.startswith('Conf'):
+			line = line.split()
+			Conf.append(line[1])
+		elif line.startswith('Pred'):
+			line = line.split()
+			Pred.append(line[1])
+		elif line.startswith('  AA'):
+			line = line.split()
+			AA.append(line[1])
+	conf = ''.join(Conf)
+	pred = ''.join(Pred)
+	aa = ''.join(AA)
+	PSI.write('Conf: ' + conf + '\n')
+	PSI.write('Pred: ' + pred + '\n')
+	PSI.write('  AA: ' + aa + '\n')
+	time.sleep(3)
+	os.remove('temp.psipred')		#Keep working directory clean, remove the temp.psipred file
+	print(Green + '[+] PSIPRED prediction complete' + Cancel)
+	#Protein's actual structure
+	PSI = open('PSIPRED.psipred' , 'a')
+	pose.dump_pdb('temporary.pdb')
+	sslist=list()
+	p = Bio.PDB.PDBParser()
+	structure = p.get_structure('X', 'temporary.pdb')
+	model = structure[0]
+	dssp = Bio.PDB.DSSP(model, 'temporary.pdb')
+	for x in dssp:
+		if x[2]=='G' or x[2]=='H' or x[2]=='I':
+			y='H'
+		elif x[2]=='B' or x[2]=='E':
+			y='E'
+		else:
+			y='C'
+		sslist.append(y)
+	ss = ''.join(sslist)
+	os.remove('temporary.pdb')
+	PSI.write('.PDB: ' + ss)
+	PSI.close()
 
 #Denovo Design
 def DeNovo(number_of_output):
@@ -323,7 +487,8 @@ def DeNovo(number_of_output):
 	PoseFinal = Pose()
 	for nterm in range(number_of_output):							#Number of different output structures
 		#2 - Generate blueprint file
-		size = random.randint(120 , 130)						#Random protein size
+		#size = random.randint(120 , 130)						#Random protein size
+		size = 27########################################################
 		#3 - Construct the loops
 		info = list()
 		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
@@ -356,6 +521,8 @@ def DeNovo(number_of_output):
 		mover.set_blueprint('blueprint')
 		mover.apply(pose)
 		os.remove('blueprint')
+#		mover.set_constraint_file('structure.cst')
+#		mover.scorefunction('ref2015_cst')
 		#Calculate Radius of Gyration (Rg) and choose lowest Rg score
 		Rg = ScoreFunction()
 		Rg.set_weight(pyrosetta.rosetta.core.scoring.rg , 1)
@@ -368,8 +535,134 @@ def DeNovo(number_of_output):
 			continue
 	PoseFinal.dump_pdb('DeNovo.pdb')
 	os.remove('temp.pdb')
+
+
+def bbgen():
+	''' Preforms De Novo Design on a protein's structure using the BluePrintBDR Mover. Generates only structures with helices (no sheet) '''
+	''' Generates user defined number of DeNovo_#.pdb files each with a different structure '''
+	#1 - Generate a temporary dummy .pdb so the BluePrintBDR mover can work on
+	temp = open('temp.pdb' , 'w')
+	temp.write('ATOM      1  N   ASP C   1      33.210  65.401  53.583  1.00 55.66           N  \nATOM      2  CA  ASP C   1      33.590  64.217  54.411  1.00 55.66           C  \nATOM      3  C   ASP C   1      33.574  62.950  53.542  1.00 52.88           C  \nATOM      4  O   ASP C   1      34.516  62.724  52.780  1.00 50.94           O  \nATOM      5  CB  ASP C   1      32.656  64.090  55.624  1.00 58.39           C  ')
+	temp.close()
+	pose = pose_from_pdb('temp.pdb')
+	#2 - Generate blueprint file
+	size = random.randint(120 , 130)						#Random protein size
+	#3 - Construct the loops
+	info = list()
+	for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
+		Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
+		if Loop == 0:
+			position = random.randint(1 , size)				#Randomly choose where these loops are added
+			info.append((position , 3))
+		else:
+			position = random.randint(1 , size)
+			info.append((position , 4))
+	#4 - Generate the blueprint file
+	blueprint = open('blueprint' , 'w')
+	for residues in range(size):
+		for x in info:
+			if residues == x[0]:
+				for y in range(x[1]):
+					blueprint.write('0 V ' + 'L' + 'X R\n')		#Loop insert
+		blueprint.write('0 V ' + 'H' + 'X R\n')					#Helix insert
+	blueprint.close()
+	#5 - Run De Novo Design
+
+
+
+	#Filters
+	filter1 = pyrosetta.rosetta.protocols.fldsgn.filters.SecondaryStructureFilter()
+	filter1.set_blueprint('blueprint')
+	#use_abego = 1
+	#cutoff = 1.0
+	#confidence = "1"
+	filter2 = pyrosetta.rosetta.protocols.fldsgn.filters.HelixBendFilter()
+	filter2.threshold(155.0)
+	filter2.helix_id(2)
+	#blueprint = 'blueprint'
+	#confidence = 1
+	Filters = pyrosetta.rosetta.protocols.filters.CombinedFilter()
+	Filters.add_filter(filter1 , 1)
+	Filters.add_filter(filter2 , 1)
+
+
+
+
+
+
+
+
+	#Movers
+	#dssp = pyrosetta.rosetta.core.scoring.dssp.Dssp()
+
+	switch1 = pyrosetta.rosetta.protocols.simple_moves.SwitchResidueTypeSetMover()
+	switch1.set_type('fa_standard')
+
+	switch2 = pyrosetta.rosetta.protocols.simple_moves.SwitchResidueTypeSetMover()
+	switch2.set_type('centroid')
+
+	#energies = pyrosetta.rosetta.protocols.fldsgn.potentials.SetSecStructEnergies()
+	#energies.set_scorefunction_ptr('fa_standard')
+
+	BDR = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
+	BDR.num_fragpick(200)
+	BDR.use_fullmer(True)
+	BDR.use_abego_bias(True)
+	BDR.use_sequence_bias(False)
+	BDR.max_linear_chainbreak(0.07)
+	BDR.ss_from_blueprint(True)
+	BDR.dump_pdb_when_fail('')
+	BDR.set_constraints_NtoC(-1.0)
+	BDR.set_blueprint('blueprint')
+	#BDR.set_constraint_file('')
+
+	constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
+	#constraints.add_constraints(1)
+	#constraints.constraint_file('')
+
+	minmover = pyrosetta.rosetta.protocols.simple_moves.MinMover()
+	#chi=1
+	#bb=1
+	minmover.set_type('dfpmin_armijo_nonmonotone_atol')
+	minmover.tolerance(0.0001)
+
+	protocol1 = pyrosetta.rosetta.protocols.rosetta_scripts.ParsedProtocol()
+	#Protocol1.add_mover_filter_pair( , )
+	#switch2
+	#constraints
+	#minmover
+	#switch1
+
+	protocol2 = pyrosetta.rosetta.protocols.rosetta_scripts.ParsedProtocol()
+	#Protocol2.add_mover_filter_pair( , )
+	#BDR
+	#protocol1
+	#dssp
+
+	loopover = pyrosetta.rosetta.protocols.protein_interface_design.movers.LoopOver()
+####	loopover.mover_name(protocol2)
+	#filter_name=secst1
+	#drift=0
+	#iterations=50
+	#ms_whenfail=FAIL_DO_NOT_RETRY
+
+	mover = SequenceMover()
+	#mover.add_mover(energies)
+	mover.add_mover(loopover)
+	mover.apply(pose)
+
+
+
+
+
+
+	#6 - Export pose
+	os.remove('blueprint')
+	pose.dump_pdb('DeNovo.pdb')
+	os.remove('temp.pdb')
 #--------------------------------------------------------------------------------------------------------------------------------------
-for structures in range(2):
+'''
+for structures in range(10):
 	directory = os.getcwd()
 	folder = 'structure_' + str(structures + 1)
 	os.mkdir(folder)
@@ -378,7 +671,14 @@ for structures in range(2):
 	DeNovo(100)
 	pose = pose_from_pdb('DeNovo.pdb')
 	Design.Pack(pose)
+	PSIPRED(pose)
 	Fragment.Make(pose)
 	Fragment.RMSD(pose , 'aat000_09_05.200_v1_3')
+	Fragment.Average()
 	#End Protocol
+	os.remove('DeNovo.pdb')
+	os.remove('RMSDvsPosition.dat')
 	os.chdir(directory)
+'''
+
+bbgen()
