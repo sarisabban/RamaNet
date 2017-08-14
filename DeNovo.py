@@ -487,8 +487,7 @@ def DeNovo(number_of_output):
 	PoseFinal = Pose()
 	for nterm in range(number_of_output):							#Number of different output structures
 		#2 - Generate blueprint file
-		#size = random.randint(120 , 130)						#Random protein size
-		size = 27########################################################
+		size = random.randint(120 , 130)						#Random protein size
 		#3 - Construct the loops
 		info = list()
 		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
@@ -567,44 +566,39 @@ def bbgen():
 		blueprint.write('0 V ' + 'H' + 'X R\n')					#Helix insert
 	blueprint.close()
 	#5 - Run De Novo Design
-
-
-
-	#Filters
+	##Filters
+	ss = str()
+	thefile = open('blueprint' , 'r')
+	for line in thefile:
+		line = line.split()
+		line = line[2][0]
+		ss = ss + line
 	filter1 = pyrosetta.rosetta.protocols.fldsgn.filters.SecondaryStructureFilter()
+	filter1.set_use_dssp(True)
 	filter1.set_blueprint('blueprint')
-	#use_abego = 1
-	#cutoff = 1.0
-	#confidence = "1"
+	filter1.filtered_ss(ss)
 	filter2 = pyrosetta.rosetta.protocols.fldsgn.filters.HelixBendFilter()
 	filter2.threshold(155.0)
 	filter2.helix_id(2)
-	#blueprint = 'blueprint'
-	#confidence = 1
 	Filters = pyrosetta.rosetta.protocols.filters.CombinedFilter()
 	Filters.add_filter(filter1 , 1)
 	Filters.add_filter(filter2 , 1)
-
-
-
-
-
-
-
-
-	#Movers
-	#dssp = pyrosetta.rosetta.core.scoring.dssp.Dssp()
-
-	switch1 = pyrosetta.rosetta.protocols.simple_moves.SwitchResidueTypeSetMover()
-	switch1.set_type('fa_standard')
-
-	switch2 = pyrosetta.rosetta.protocols.simple_moves.SwitchResidueTypeSetMover()
-	switch2.set_type('centroid')
-
-	#energies = pyrosetta.rosetta.protocols.fldsgn.potentials.SetSecStructEnergies()
-	#energies.set_scorefunction_ptr('fa_standard')
-
-	BDR = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
+	##Score Function
+	scorefxn = get_fa_scorefxn()
+	##Move Map
+	movemap = MoveMap()
+	movemap.set_bb(True)							#Do not change the phi and psi BackBone angles
+	movemap.set_chi(True)							
+	##Movers
+	minmover = pyrosetta.rosetta.protocols.simple_moves.MinMover()
+	minmover.set_type('dfpmin_armijo_nonmonotone_atol')
+	minmover.tolerance(0.0001)
+	minmover.score_function(scorefxn)
+	minmover.movemap(movemap)
+	constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
+	constraints.add_constraints(True)
+	constraints.constraint_file('1.cst')
+	BDR = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR('blueprint' , True)
 	BDR.num_fragpick(200)
 	BDR.use_fullmer(True)
 	BDR.use_abego_bias(True)
@@ -613,44 +607,36 @@ def bbgen():
 	BDR.ss_from_blueprint(True)
 	BDR.dump_pdb_when_fail('')
 	BDR.set_constraints_NtoC(-1.0)
-	BDR.set_blueprint('blueprint')
-	#BDR.set_constraint_file('')
+#	BDR.set_constraint_file('1.cst')
+	protocol = pyrosetta.rosetta.protocols.rosetta_scripts.ParsedProtocol()
+	protocol.add_mover_filter_pair(BDR , 'BDR' , Filters , True)
+#	protocol.add_mover_filter_pair(constraints , 'constraints' , Filters , True)
+	protocol.add_mover_filter_pair(minmover , 'minmover' , Filters , True)
+	protocol.apply(pose)
 
-	constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
-	#constraints.add_constraints(1)
-	#constraints.constraint_file('')
 
-	minmover = pyrosetta.rosetta.protocols.simple_moves.MinMover()
-	#chi=1
-	#bb=1
-	minmover.set_type('dfpmin_armijo_nonmonotone_atol')
-	minmover.tolerance(0.0001)
 
-	protocol1 = pyrosetta.rosetta.protocols.rosetta_scripts.ParsedProtocol()
-	#Protocol1.add_mover_filter_pair( , )
-	#switch2
-	#constraints
-	#minmover
-	#switch1
 
-	protocol2 = pyrosetta.rosetta.protocols.rosetta_scripts.ParsedProtocol()
-	#Protocol2.add_mover_filter_pair( , )
-	#BDR
-	#protocol1
-	#dssp
 
-	loopover = pyrosetta.rosetta.protocols.protein_interface_design.movers.LoopOver()
-####	loopover.mover_name(protocol2)
-	#filter_name=secst1
-	#drift=0
-	#iterations=50
-	#ms_whenfail=FAIL_DO_NOT_RETRY
 
-	mover = SequenceMover()
-	#mover.add_mover(energies)
-	mover.add_mover(loopover)
-	mover.apply(pose)
+#	loopover = pyrosetta.rosetta.protocols.protein_interface_design.movers.LoopOver()
+#	loopover.mover_name()
+#	loopover.apply(pose)
 
+
+#	Mover = pyrosetta.rosetta.protocols.moves.WhileMover()
+#	Mover.assign(protocol)
+#	Mover.apply(pose)
+
+
+	'''
+	loopover.mover_name(protocol)
+
+	#filter_name		('Filters')
+	#drift			(False)
+	#iterations		(50)
+	#ms_whenfail		('FAIL_DO_NOT_RETRY')
+	'''
 
 
 
