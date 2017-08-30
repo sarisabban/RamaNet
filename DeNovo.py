@@ -667,4 +667,4 @@ for structures in range(10):
 	os.chdir(directory)
 '''
 
-bbgen()
+#bbgen()
