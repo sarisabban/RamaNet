@@ -381,7 +381,12 @@ def Database(filename):
 
 
 
-def PDBclean():
+def PDBclean(smaller , bigger):
+	''' A small script that cleans the PDB database '''
+	''' Will generate the directory PDBDatabase with all the cleaned .pdb structures inside it '''
+	From = int(smaller)
+	To = int(bigger)
+
 	#Collect Structures
 	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
 	current = os.getcwd()
@@ -425,11 +430,11 @@ def PDBclean():
 		else:
 			#Delete Structures Larger Than 150 or Smaller Than 100 Amino Acids
 			length = int(str(Type[0]).split()[2].split('=')[1].split('>')[0])
-			if length > 150 or length < 100:
+			if length > To or length < From:
 				print('[-] WRONG SIZE\t' , thefile)
 				os.remove(TheFile)
 			else:
-				print('[+] GOOD\t' , thefile)
+	print('[+] GOOD\t' , thefile)
 
 
 
