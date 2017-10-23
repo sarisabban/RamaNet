@@ -1,9 +1,11 @@
 #!/usr/bin/python3
 
-import sys , os , re , time , datetime , subprocess , random , requests , itertools , urllib.request , bs4 , math , gzip , Bio.PDB.Polypeptide , Bio.PDB.PDBParser , Bio.PDB, Bio.PDB.Vector
+import os , re , time , datetime , random , requests , urllib.request , bs4 , math , gzip , Bio.PDB
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
+#--------------------------------------------------------------------------------------------------------------------------------------
+#Functions
 
 def Relax(pose):
 	''' Relaxes a structure '''
@@ -259,131 +261,9 @@ def Fragments(pose):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def BluePrint():
-		''' Generates a random blueprint file '''
-		''' Generates the blueprint file '''
-		#Generate blueprint file
-		size = random.randint(120 , 130)						#Random protein size
-		#Construct the loops
-		info = list()
-		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
-			Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
-			if Loop == 0:
-				position = random.randint(1 , size)				#Randomly choose where these loops are added
-				info.append((position , 3))
-			else:
-				position = random.randint(1 , size)
-				info.append((position , 4))
-		#Generate the blueprint file
-		ss = open('structure.blueprint' , 'w')
-		for residues in range(size):
-			for x in info:
-				if residues == x[0]:
-					for y in range(x[1]):
-						ss.write('L' + '\n')				#Loop insert
-			ss.write('H' + '\n')							#Helix insert
-		ss.close()
-
-def Database(filename):
-	''' Isolates the secondary structure and the Phi/Psi torsion angles from a .pdb file '''
-	''' Generates a .dat file for that .pdb file '''
-	#Get secondary structures
-	parser = Bio.PDB.PDBParser()
-	structure = parser.get_structure('structure' , filename)
-	model = structure[0]
-	dssp = Bio.PDB.DSSP(model , filename , acc_array='Wilke')
-	SS = list()
-	for res in dssp:
-		ss = res[2]
-		if ss == '-' or ss == 'T' or ss == 'S':		#Loop (DSSP code is - or T or S)
-			SS.append('L')
-		elif ss == 'G' or ss == 'H' or ss == 'I':	#Helix (DSSP code is G or H or I)
-			SS.append('H')
-		elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
-			SS.append('S')
-	#Get torsion angles
-	Tor = list()
-	for model in Bio.PDB.PDBParser().get_structure('structure' , filename):
-		for chain in model:
-			polypeptides = Bio.PDB.PPBuilder().build_peptides(chain)
-			for poly_index , poly in enumerate(polypeptides):
-				phi_psi = poly.get_phi_psi_list()
-				for res_index , residue in enumerate(poly):
-					#Phi angles
-					if phi_psi[res_index][0] is None:
-						phi = 0
-					else:
-						angle = phi_psi[res_index][0] * 180 / math.pi
-						while angle > 180:
-							angle = angle - 360
-						while angle < -180:
-							angle = angle + 360
-						phi = angle
-					#Psi angles
-					if phi_psi[res_index][1] is None:
-						psi = 0
-					else:
-						angle = phi_psi[res_index][1] * 180 / math.pi
-						while angle > 180:
-							angle = angle - 360
-						while angle < -180:
-							angle = angle + 360
-						psi = angle
-					Tor.append((phi , psi))
-	#Put together
-	name = filename.split('.')
-	thefile = open(name[0] + '.data' , 'w')
-	for item in zip(SS , Tor):
-		line = (str(item[0]) + '\t' + str(item[1][0]) + '\t' + str(item[1][1]) + '\n')
-		thefile.write(line)
-	thefile.close()
-
-
-
-
-
-
-
-def PDBclean(smaller , bigger):
-	''' A small script that cleans the PDB database '''
-	''' Will generate the directory PDBDatabase with all the cleaned .pdb structures inside it '''
+def Database(smaller , bigger):
+	''' A small script that cleans the PDB database, then isolates the secondary structure and the Phi/Psi torsion angles from each .pdb file '''
+	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .dat files for all .pdb files '''
 	From = int(smaller)
 	To = int(bigger)
 
@@ -434,58 +314,63 @@ def PDBclean(smaller , bigger):
 				print('[-] WRONG SIZE\t' , thefile)
 				os.remove(TheFile)
 			else:
-	print('[+] GOOD\t' , thefile)
+				#Get secondary structures
+				parser = Bio.PDB.PDBParser()
+				structure = parser.get_structure('structure' , filename)
+				model = structure[0]
+				dssp = Bio.PDB.DSSP(model , filename , acc_array='Wilke')
+				SS = list()
+				for res in dssp:
+					ss = res[2]
+					if ss == '-' or ss == 'T' or ss == 'S':		#Loop (DSSP code is - or T or S)
+						SS.append('L')
+					elif ss == 'G' or ss == 'H' or ss == 'I':	#Helix (DSSP code is G or H or I)
+						SS.append('H')
+					elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
+						SS.append('S')
+				#Get torsion angles
+				Tor = list()
+				for model in Bio.PDB.PDBParser().get_structure('structure' , filename):
+					for chain in model:
+						polypeptides = Bio.PDB.PPBuilder().build_peptides(chain)
+						for poly_index , poly in enumerate(polypeptides):
+							phi_psi = poly.get_phi_psi_list()
+							for res_index , residue in enumerate(poly):
+								#Phi angles
+								if phi_psi[res_index][0] is None:
+									phi = 0
+								else:
+									angle = phi_psi[res_index][0] * 180 / math.pi
+									while angle > 180:
+										angle = angle - 360
+									while angle < -180:
+										angle = angle + 360
+									phi = angle
+								#Psi angles
+								if phi_psi[res_index][1] is None:
+									psi = 0
+								else:
+									angle = phi_psi[res_index][1] * 180 / math.pi
+									while angle > 180:
+										angle = angle - 360
+									while angle < -180:
+										angle = angle + 360
+									psi = angle
+								Tor.append((phi , psi))
+				#Put together
+				name = filename.split('.')
+				thefile = open(name[0] + '.data' , 'w')
+				for item in zip(SS , Tor):
+					line = (str(item[0]) + '\t' + str(item[1][0]) + '\t' + str(item[1][1]) + '\n')
+					thefile.write(line)
+				thefile.close()
+				print('[+] GOOD\t' , thefile)
+	os.system('mkdir Data')
+	os.system('mv ' + current + '/PDBDatabase/' + '*.dat Data')
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def DeNovo(filename):
-	''' Draws the torsion angles to generate a PDB file '''
-	''' Generates the Draw.pdb file '''
+def Draw(filename):
+	''' Draws the torsion angles to generate a .pdb file '''
+	''' Generates the DeNovo.pdb file '''
 	#Length of structure
 	thefile = open(filename , 'r')
 	for resi in enumerate(thefile):
@@ -506,14 +391,50 @@ def DeNovo(filename):
 	Relax(pose)
 	pose.dump_pdb('DeNovo.pdb')
 
+def BluePrint():
+		''' Generates a random blueprint file '''
+		''' Generates the blueprint file '''
+		#Generate blueprint file
+		size = random.randint(120 , 130)						#Random protein size
+		#Construct the loops
+		info = list()
+		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
+			Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
+			if Loop == 0:
+				position = random.randint(1 , size)				#Randomly choose where these loops are added
+				info.append((position , 3))
+			else:
+				position = random.randint(1 , size)
+				info.append((position , 4))
+		#Generate the blueprint file
+		ss = open('blueprint' , 'w')
+		for residues in range(size):
+			for x in info:
+				if residues == x[0]:
+					for y in range(x[1]):
+						ss.write('L' + '\n')				#Loop insert
+			ss.write('H' + '\n')							#Helix insert
+		ss.close()
 
 
 
-def Learn():
+
+
+
+
+
+def ML(directory):
 	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
-Database('start.pdb')
-Draw('start.data')
-pose = pose_from_pdb('DeNovo.pdb')
+'''
+Relax(pose)
+SASA(pose)
 Design(pose)
 Fragments(pose)
+Database(smaller , bigger)
+Draw(filename)
+BluePrint()
+ML(Data)
+'''
+#--------------------------------------------------------------------------------------------------------------------------------------
+Database(100 , 150)
