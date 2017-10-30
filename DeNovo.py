@@ -263,13 +263,14 @@ def Fragments(pose):
 
 def Database(smaller , bigger):
 	''' A small script that cleans the PDB database, then isolates the secondary structure and the Phi/Psi torsion angles from each .pdb file '''
-	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .dat files for all .pdb files '''
+	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .csv files for all .pdb files '''
 	From = int(smaller)
 	To = int(bigger)
 
 	#Collect Structures
 	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
 	current = os.getcwd()
+	os.mkdir('Data')
 	os.mkdir('PDBDatabase')
 	filelist = os.listdir('DATABASE')
 	for directories in filelist:
@@ -316,9 +317,9 @@ def Database(smaller , bigger):
 			else:
 				#Get secondary structures
 				parser = Bio.PDB.PDBParser()
-				structure = parser.get_structure('structure' , filename)
+				structure = parser.get_structure('X' , TheFile)
 				model = structure[0]
-				dssp = Bio.PDB.DSSP(model , filename , acc_array='Wilke')
+				dssp = Bio.PDB.DSSP(model , TheFile , acc_array='Wilke')
 				SS = list()
 				for res in dssp:
 					ss = res[2]
@@ -330,7 +331,7 @@ def Database(smaller , bigger):
 						SS.append('S')
 				#Get torsion angles
 				Tor = list()
-				for model in Bio.PDB.PDBParser().get_structure('structure' , filename):
+				for model in Bio.PDB.PDBParser().get_structure('structure' , TheFile):
 					for chain in model:
 						polypeptides = Bio.PDB.PPBuilder().build_peptides(chain)
 						for poly_index , poly in enumerate(polypeptides):
@@ -358,15 +359,16 @@ def Database(smaller , bigger):
 									psi = angle
 								Tor.append((phi , psi))
 				#Put together
-				name = filename.split('.')
-				thefile = open(name[0] + '.data' , 'w')
+				name = thefile.split('.')
+				thefile = open(name[0] + '.csv' , 'w')
+				count = 0
 				for item in zip(SS , Tor):
-					line = (str(item[0]) + '\t' + str(item[1][0]) + '\t' + str(item[1][1]) + '\n')
+					count += 1
+					line = (str(count) + ';' + str(item[0]) + ';' + str(item[1][0]) + ';' + str(item[1][1]) + '\n')
 					thefile.write(line)
 				thefile.close()
-				print('[+] GOOD\t' , thefile)
-	os.system('mkdir Data')
-	os.system('mv ' + current + '/PDBDatabase/' + '*.dat Data')
+				os.system('mv ' + name[0] + '.csv Data')
+				print('[+] GOOD\t' , name[0])
 
 def Draw(filename):
 	''' Draws the torsion angles to generate a .pdb file '''
