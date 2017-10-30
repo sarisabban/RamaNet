@@ -361,6 +361,7 @@ def Database(smaller , bigger):
 				#Put together
 				name = thefile.split('.')
 				thefile = open(name[0] + '.csv' , 'w')
+				thefile.write('residue number;secondary structure;PHI;PSI\n')
 				count = 0
 				for item in zip(SS , Tor):
 					count += 1
