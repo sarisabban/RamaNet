@@ -268,15 +268,15 @@ def Database(smaller , bigger):
 	To = int(bigger)
 
 	#Collect Structures
-	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
+	os.system('wget -rA .ent.gz ftp://ftp.rcsb.org/pub/pdb/data/structures/divided/pdb/ -P DATABASE')
 	current = os.getcwd()
 	os.mkdir('Data')
 	os.mkdir('PDBDatabase')
-	filelist = os.listdir('DATABASE')
+	filelist = os.listdir('DATABASE/ftp.rcsb.org/pub/pdb/data/structures/divided/pdb')
 	for directories in filelist:
-		files = os.listdir(current + '/DATABASE/' + directories)
+		files = os.listdir(current + '/DATABASE/ftp.rcsb.org/pub/pdb/data/structures/divided/pdb/' + directories)
 		for afile in files:
-			location = (current + '/DATABASE/' + directories + '/' + afile)
+			location = (current + '/DATABASE/ftp.rcsb.org/pub/pdb/data/structures/divided/pdb/' + directories + '/' + afile)
 			print(location)
 			os.rename(location , current + '/PDBDatabase/' + afile)
 	os.system('rm -r ./DATABASE')
@@ -370,6 +370,7 @@ def Database(smaller , bigger):
 				thefile.close()
 				os.system('mv ' + name[0] + '.csv Data')
 				print('[+] GOOD\t' , name[0])
+	os.remove('PDBDatabase')
 
 def Draw(filename):
 	''' Draws the torsion angles to generate a .pdb file '''
