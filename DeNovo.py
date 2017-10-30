@@ -314,6 +314,28 @@ def Database(smaller , bigger):
 			if length > To or length < From:
 				print('[-] WRONG SIZE\t' , thefile)
 				os.remove(TheFile)
+			elif:
+				#Delete floppy structures, with loops as their dominant secondary structure
+				parser = Bio.PDB.PDBParser()
+				structure = parser.get_structure('X' , TheFile)
+				model = structure[0]
+				dssp = Bio.PDB.DSSP(model , TheFile , acc_array='Wilke')
+				SS = list()
+				for res in dssp:
+					ss = res[2]
+					if ss == '-' or ss == 'T' or ss == 'S':		#Loop (DSSP code is - or T or S)
+						SS.append('L')
+					elif ss == 'G' or ss == 'H' or ss == 'I':	#Helix (DSSP code is G or H or I)
+						SS.append('H')
+					elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
+						SS.append('S')
+				loop = SS.count('L')
+				helix = SS.count('H')
+				strand = SS.count('S')
+				if loop => helix + strand:
+					os.remove(TheFile)
+				else:
+					continue
 			else:
 				#Get secondary structures
 				parser = Bio.PDB.PDBParser()
@@ -329,35 +351,42 @@ def Database(smaller , bigger):
 						SS.append('H')
 					elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
 						SS.append('S')
-				#Get torsion angles
-				Tor = list()
-				for model in Bio.PDB.PDBParser().get_structure('structure' , TheFile):
-					for chain in model:
-						polypeptides = Bio.PDB.PPBuilder().build_peptides(chain)
-						for poly_index , poly in enumerate(polypeptides):
-							phi_psi = poly.get_phi_psi_list()
-							for res_index , residue in enumerate(poly):
-								#Phi angles
-								if phi_psi[res_index][0] is None:
-									phi = 0
-								else:
-									angle = phi_psi[res_index][0] * 180 / math.pi
-									while angle > 180:
-										angle = angle - 360
-									while angle < -180:
-										angle = angle + 360
-									phi = angle
-								#Psi angles
-								if phi_psi[res_index][1] is None:
-									psi = 0
-								else:
-									angle = phi_psi[res_index][1] * 180 / math.pi
-									while angle > 180:
-										angle = angle - 360
-									while angle < -180:
-										angle = angle + 360
-									psi = angle
-								Tor.append((phi , psi))
+				#Delete floppy structures, with loops as their dominant secondary structure
+				loop = SS.count('L')
+				helix = SS.count('H')
+				strand = SS.count('S')
+				if loop >= helix + strand:
+					os.remove(TheFile)
+				else:
+					#Get torsion angles
+					Tor = list()
+					for model in Bio.PDB.PDBParser().get_structure('X' , TheFile):
+						for chain in model:
+							polypeptides = Bio.PDB.PPBuilder().build_peptides(chain)
+							for poly_index , poly in enumerate(polypeptides):
+								phi_psi = poly.get_phi_psi_list()
+								for res_index , residue in enumerate(poly):
+									#Phi angles
+									if phi_psi[res_index][0] is None:
+										phi = 0
+									else:
+										angle = phi_psi[res_index][0] * 180 / math.pi
+										while angle > 180:
+											angle = angle - 360
+										while angle < -180:
+											angle = angle + 360
+										phi = angle
+									#Psi angles
+									if phi_psi[res_index][1] is None:
+										psi = 0
+									else:
+										angle = phi_psi[res_index][1] * 180 / math.pi
+										while angle > 180:
+											angle = angle - 360
+										while angle < -180:
+											angle = angle + 360
+										psi = angle
+									Tor.append((phi , psi))
 				#Put together
 				name = thefile.split('.')
 				thefile = open(name[0] + '.csv' , 'w')
