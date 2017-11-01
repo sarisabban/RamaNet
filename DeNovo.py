@@ -266,7 +266,7 @@ def Database(smaller , bigger):
 	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .csv files for all .pdb files '''
 	From = int(smaller)
 	To = int(bigger)
-	#Collect Structures
+	#Collect structures
 	os.system('wget -rA .ent.gz ftp://ftp.rcsb.org/pub/pdb/data/structures/divided/pdb/ -P DATABASE')
 	current = os.getcwd()
 	os.mkdir('PDBDatabase')
@@ -278,7 +278,7 @@ def Database(smaller , bigger):
 			print(location)
 			os.rename(location , current + '/PDBDatabase/' + afile)
 	os.system('rm -r ./DATABASE')
-	#Separate Chains
+	#Separate chains
 	pdbfilelist = os.listdir('PDBDatabase')
 	os.chdir('PDBDatabase')
 	for thefile in pdbfilelist:
@@ -300,7 +300,7 @@ def Database(smaller , bigger):
 		print('[+] Extracted' + '\t' + Name[1].upper() , '\t' , chain)
 		os.remove(TheFile)
 	os.chdir(current)
-	#Remove Unwanted Structures
+	#Remove unwanted structures
 	pdbfilelist = os.listdir('PDBDatabase')
 	ProteinCount = 1
 	thedatafile = open('data.csv' , 'a')
@@ -312,18 +312,18 @@ def Database(smaller , bigger):
 		structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
 		ppb = Bio.PDB.Polypeptide.PPBuilder()
 		Type = ppb.build_peptides(structure , aa_only=False)
-		#Delete Non-Protein Files
+		#Delete non-protein files
 		if Type == []:
 			print('[-] NOT PROTEIN\t' , thefile)
 			os.remove(TheFile)
 		else:
-			#Delete Structures Larger Than 150 or Smaller Than 100 Amino Acids
+			#Delete structures larger than 150 or smaller than 100 amino acids
 			length = int(str(Type[0]).split()[2].split('=')[1].split('>')[0])
 			if length > To or length < From:
 				print('[-] WRONG SIZE\t' , thefile)
 				os.remove(TheFile)
 			else:
-				#Delete Structures With None-continuous Chains By Tracing The Chain And Measuring All The Peptide Bonds (aprox = 1.3 angstroms), If The Distance Between The C and N Atoms is Larger Than 1.3 Then There Is A Chain Break
+				#Delete structures with none-continuous chains by tracing the chain and measuring all the peptide bonds (aprox = 1.3 angstroms), if the distance between the C and N atoms is larger than 1.3 then there is a chain break
 				structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
 				ppb = Bio.PDB.Polypeptide.PPBuilder()
 				Type = ppb.build_peptides(structure , aa_only=False)
@@ -349,7 +349,7 @@ def Database(smaller , bigger):
 					print('[-] BROKEN CHAIN\t' , thefile)
 					os.remove(TheFile)
 				else:
-					#Get Secondary Structures
+					#Get secondary structures
 					parser = Bio.PDB.PDBParser()
 					structure = parser.get_structure('X' , TheFile)
 					model = structure[0]
@@ -363,7 +363,7 @@ def Database(smaller , bigger):
 							SS.append('H')
 						elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
 							SS.append('S')
-					#Delete Floppy Structures, With Loops as Their Dominant Secondary Structure
+					#Delete floppy structures, with loops as their dominant secondary structure
 					loop = SS.count('L')
 					helix = SS.count('H')
 					strand = SS.count('S')
@@ -371,7 +371,7 @@ def Database(smaller , bigger):
 						print('[-] FLOPPY\t' , thefile)
 						os.remove(TheFile)
 					else:
-						#Renumber Residues
+						#Renumber residues
 						pdb = open(TheFile , 'r')
 						PDB = open(TheFile + 'X' , 'w')
 						count = 0
@@ -388,7 +388,7 @@ def Database(smaller , bigger):
 						PDB.close()
 						os.remove(TheFile)
 						os.rename(TheFile + 'X' , TheFile)
-						#Get Torsion Angles
+						#Get torsion angles
 						count += 1
 						Tor = list()
 						for model in Bio.PDB.PDBParser().get_structure('X' , TheFile):
@@ -397,7 +397,7 @@ def Database(smaller , bigger):
 								for poly_index , poly in enumerate(polypeptides):
 									phi_psi = poly.get_phi_psi_list()
 									for res_index , residue in enumerate(poly):
-										#Phi Angles
+										#Phi angles
 										if phi_psi[res_index][0] is None:
 											phi = 0
 										else:
@@ -407,7 +407,7 @@ def Database(smaller , bigger):
 											while angle < -180:
 												angle = angle + 360
 											phi = angle
-										#Psi Angles
+										#Psi angles
 										if phi_psi[res_index][1] is None:
 											psi = 0
 										else:
@@ -432,7 +432,7 @@ def Database(smaller , bigger):
 							atom2 = residue2['CA']
 							distance = atom1-atom2
 							distances.append(distance)
-						#Put Info Together
+						#Put info together
 						ss = list()
 						for val in SS:
 							if val == 'L':
@@ -450,13 +450,13 @@ def Database(smaller , bigger):
 						PHIAngles = ';' + ';'.join(map(str, phiang))					#PHI angles printed horisantally
 						PSIAngles = ';' + ';'.join(map(str, psiang))					#PSI angles printed horisantally
 						Distances = ';' + ';'.join(map(str , distances))
-						#Fill in Remaining Positions With 0 Until Position 150
+						#Fill in remaining positions with 0 until position 150
 						add = 150 - len(SS)
 						fill = list()
 						for zeros in range(add):
 							fill.append('0')
 						filling = ';' + ';'.join(fill)
-						#Write To File
+						#Write to file
 						line = str(ProteinCount) + SecondaryStructures + filling + Distances + '\n'	#The PHI and PSI angels are not being used because we cannot insert the angels as a feature during Machine Learning prediction, to use add this to the line variable: PHIAngles + filling + PSIAngles + filling
 						thedatafile.write(line)
 						ProteinCount += 1
@@ -543,7 +543,7 @@ def Draw(TheList):
 		elif resi == '3':
 			pose.set_phi(int(count) , -120)
 			pose.set_psi(int(count) , 120)
-	#Satisfy Distances
+	#Satisfy distances
 	pass
 #	Relax(pose)
 	pose.dump_pdb('DeNovo.pdb')
