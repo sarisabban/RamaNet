@@ -382,7 +382,7 @@ def Database(smaller , bigger):
 							AA1 = line[23:27]													#Sequencially number residues
 							if not AA1 == AA2:
 								num += 1			
-							final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line of the motif to have its atoms and residues sequencially labeled, as well as being in chain A
+							final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line to have its atoms and residues sequencially labeled, as well as being in chain A
 							AA2 = AA1
 							PDB.write(final_line)													#Write to new file called motif.pdb
 						PDB.close()
