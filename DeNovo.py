@@ -464,33 +464,23 @@ def Database(smaller , bigger):
 	thedatafile.close()
 	os.system('rm -r PDBDatabase')
 
-def Draw(filename):
-	''' Draws the torsion angles to generate a .pdb file '''
-	''' Generates the DeNovo.pdb file '''
-	#Length of structure
-	thefile = open(filename , 'r')
-	for resi in enumerate(thefile):
-		size = resi[0] + 1
-	Val = str()
-	for itr in range(size):
-		itr = 'V'
-		Val = Val + itr
-	pose = pose_from_sequence(Val)
-	#Apply torsion angles
-	thefile = open(filename , 'r')
-	for line in enumerate(thefile):
-		angles = line[1].split()
-		phi = angles[1]
-		psi = angles[2]
-		pose.set_phi(int(line[0] + 1) , float(phi))
-		pose.set_psi(int(line[0] + 1) , float(psi))
-	Relax(pose)
-	pose.dump_pdb('DeNovo.pdb')
 
-def BluePrint():
-		''' Generates a random blueprint file '''
-		''' Generates the blueprint file '''
-		#Generate blueprint file
+
+
+
+
+
+
+
+
+
+
+
+#MUST STUDY THE RATIO OF HELIX TO STRAND TO LOOP ---> WHAT IS THE PATTERN???
+def GenerateSecondaryStructures():
+		''' Generates a random structure's secondary structures '''
+		''' Generates a list that has each amino acid's secondary structure '''
+		#Generate structure size
 		size = random.randint(120 , 130)						#Random protein size
 		#Construct the loops
 		info = list()
@@ -502,15 +492,63 @@ def BluePrint():
 			else:
 				position = random.randint(1 , size)
 				info.append((position , 4))
-		#Generate the blueprint file
-		ss = open('blueprint' , 'w')
+		#Generate the list
+		ss = list()
 		for residues in range(size):
 			for x in info:
 				if residues == x[0]:
 					for y in range(x[1]):
-						ss.write('L' + '\n')				#Loop insert
-			ss.write('H' + '\n')							#Helix insert
-		ss.close()
+						ss.append('1')					#Loop insert
+			ss.append('2')								#Helix insert
+		add = 150 - len(ss)
+		for zeros in range(add):
+			ss.append('0')
+		return(ss)
+
+
+
+
+
+
+
+def Draw(TheList):
+	''' Draws the torsion angles to generate a .pdb file '''
+	''' Generates the DeNovo.pdb file '''
+	#Length of structure
+	count = 0
+	for resi in TheList:
+		if resi == '0':
+			pass
+		else:
+			count += 1
+			size = count
+	#Construct primary structure made of Valines
+	Val = str()
+	for itr in range(size):
+		itr = 'V'
+		Val = Val + itr
+	pose = pose_from_sequence(Val)
+	#Apply torsion angles
+	count = 0
+	for resi in TheList:
+		count += 1
+		if resi == '0':
+			pass
+		elif resi == '1':
+			pose.set_phi(int(count) , 60)
+			pose.set_psi(int(count) , 30)
+		elif resi == '2':
+			pose.set_phi(int(count) , -90)
+			pose.set_psi(int(count) , -30)
+		elif resi == '3':
+			pose.set_phi(int(count) , -120)
+			pose.set_psi(int(count) , 120)
+	#Satisfy Distances
+	pass
+#	Relax(pose)
+	pose.dump_pdb('DeNovo.pdb')
+
+
 
 
 
@@ -528,9 +566,13 @@ SASA(pose)
 Design(pose)
 Fragments(pose)
 Database(smaller , bigger)
+
+TheList = GenerateSecondaryStructures()
+
 Draw(filename)
-BluePrint()
+
 ML(Data)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
-Database(100 , 150)
+TheList = GenerateSecondaryStructures()
+Draw(TheList)
