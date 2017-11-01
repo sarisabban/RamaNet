@@ -89,23 +89,23 @@ def Design(pose):
 	score1_original_before_relax = scorefxn(pose)										#Measure score before relaxing
 	Relax(pose)														#Relax structure
 	score2_original_after_relax = scorefxn(pose)										#Measure score after relaxing
-	#B - FastDesign Protocol												#Uses Generic Monte Carlo with PackStat as a filter to direct FastDesign towards an optimally packed structure core
+	#B - FastDesign protocol												#Uses Generic Monte Carlo with PackStat as a filter to direct FastDesign towards an optimally packed structure core
 	chain = pose.pdb_info().chain(1)											#Identify chain
 	layers = [2 , 1 , 0]													#Layer Identity from SASA Surface = [0] , Boundary = [1] , Core = [2]
 	for identity in layers:													#Loop through each layer
-		#1 - Setup The PackStat Filter
+		#1 - Setup the PackStat filter
 		filters = rosetta.protocols.simple_filters.PackStatFilter()
 		#2 - Identify The Layers
 		sasa = SASA(pose)												#Re-calculate SASA every time because amino acid position can change from one layer to another during the design phase, therefore make sure to design the layer not the amino acid
 		layer = sasa[identity]												#Changes every iteration to start with Core (sasa[2]) then Boundary (sasa[1]) then Surface (sasa[0])
-		#3 - Generate The Resfile											#Will generate a new Resfile for each layer (which is why it is deleted at the end of the loop)
+		#3 - Generate the resfile											#Will generate a new Resfile for each layer (which is why it is deleted at the end of the loop)
 		Resfile = open('Resfile.resfile' , 'w')
 		Resfile.write('NATAA\n')
 		Resfile.write('start\n')
 		for line in layer:
 			Resfile.write(str(line) + ' ' + chain + ' ALLAA\n')
 		Resfile.close()
-		#4 - Setup The FastDesign Mover
+		#4 - Setup the FastDesign mover
 		task = pyrosetta.rosetta.core.pack.task.TaskFactory()								#Setup the TaskFactory
 		read = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('Resfile.resfile')				#Call the generated Resfile
 		task.push_back(read)												#Add the Resfile to the TaskFactory
@@ -116,7 +116,7 @@ def Design(pose):
 		mover.set_task_factory(task)											#Add the TaskFactory to it
 		mover.set_movemap(movemap)											#Add the MoveMap to it
 		mover.set_scorefxn(scorefxn)											#Add the Score Function to it
-		#5 - Setup and Apply The Generic Monte Carlo Mover
+		#5 - Setup and apply the generic Monte Carlo mover
 		MC = pyrosetta.rosetta.protocols.simple_moves.GenericMonteCarloMover()						#Call Monter Carlo Class
 		MC.set_mover(mover)												#Load The Mover
 		MC.set_scorefxn(scorefxn)											#Set score function
@@ -128,9 +128,9 @@ def Design(pose):
 		MC.add_filter(filters , False , 1.0 , 'high' , True)								#Add a filter (Filter Type , Adaptive , Temperature , Sample Type , Rank By)
 		MC.apply(pose)													#Apply Move
 		os.remove('Resfile.resfile')											#To keep working directory clean, and to make sure each Resfile has the info for each layer only and they do not get mixed and appended together in one Resfile
-	#C - Relax Pose
+	#C - Relax pose
 	Relax(pose)														#Relax structure
-	#D - Output Result
+	#D - Output result
 	score3_of_design_after_relax = scorefxn(pose)										#Measure score of designed pose
 	pose.dump_pdb('structure.pdb')												#Export final pose into a .pdb structure file
 	print('---------------------------------------------------------')
