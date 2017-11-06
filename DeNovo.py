@@ -393,7 +393,7 @@ def Database(smaller , bigger):
 						rr = sum(mi * i + mj * j + mk * k for (i , j , k) , (mi , mj , mk) in zip(coord , xm))
 						mm = sum((sum(i) / tmass) ** 2 for i in zip( * xm))
 						rg = math.sqrt(rr / tmass - mm)
-						if rg =< 15:
+						if rg <= 15:
 							os.remove(TheFile)
 						else:
 							#Renumber residues
