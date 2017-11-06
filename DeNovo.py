@@ -370,96 +370,122 @@ def Database(smaller , bigger):
 						print('[-] FLOPPY\t' , thefile)
 						os.remove(TheFile)
 					else:
-						#Renumber residues
-						pdb = open(TheFile , 'r')
-						PDB = open(TheFile + 'X' , 'w')
-						count = 0
-						num = 0
-						AA2 = None
-						for line in pdb:
-							count += 1														#Sequencially number atoms
-							AA1 = line[23:27]													#Sequencially number residues
-							if not AA1 == AA2:
-								num += 1			
-							final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line to have its atoms and residues sequencially labeled, as well as being in chain A
-							AA2 = AA1
-							PDB.write(final_line)													#Write to new file called motif.pdb
-						PDB.close()
-						os.remove(TheFile)
-						os.rename(TheFile + 'X' , TheFile)
-						#Get torsion angles
-						count += 1
-						Tor = list()
-						for model in Bio.PDB.PDBParser().get_structure('X' , TheFile):
-							for chain in model:
-								polypeptides = Bio.PDB.PPBuilder().build_peptides(chain)
-								for poly_index , poly in enumerate(polypeptides):
-									phi_psi = poly.get_phi_psi_list()
-									for res_index , residue in enumerate(poly):
-										#Phi angles
-										if phi_psi[res_index][0] is None:
-											phi = 0
-										else:
-											angle = phi_psi[res_index][0] * 180 / math.pi
-											while angle > 180:
-												angle = angle - 360
-											while angle < -180:
-												angle = angle + 360
-											phi = angle
-										#Psi angles
-										if phi_psi[res_index][1] is None:
-											psi = 0
-										else:
-											angle = phi_psi[res_index][1] * 180 / math.pi
-											while angle > 180:
-												angle = angle - 360
-											while angle < -180:
-												angle = angle + 360
-											psi = angle
-										Tor.append((phi , psi))
-						#Distances
-						structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
-						ppb = Bio.PDB.Polypeptide.PPBuilder()
-						Type = ppb.build_peptides(structure , aa_only=False)
-						model = Type
-						chain = model[0]
-						distances = list()
-						for key , value in {0:1 , 9:11 , 19:21 , 29:31 , 39:41 , 49:51 , 59:61 , 69:71 , 79:81 , 89:91}.items():
-							residue1 = chain[key]
-							residue2 = chain[length - value]
-							atom1 = residue1['CA']
-							atom2 = residue2['CA']
-							distance = atom1-atom2
-							distances.append(distance)
-						#Put info together
-						ss = list()
-						for val in SS:
-							if val == 'L':
-								ss.append('1')
-							elif val == 'H':
-								ss.append('2')
-							elif val == 'S':
-								ss.append('3')
-						SecondaryStructures = ';' + ';'.join(ss)					#Secondary Structures L = 1, H = 2, S = 3 printed horisantally
-						phiang = list()
-						psiang = list()
-						for val in Tor:
-							phiang.append(val[0])
-							psiang.append(val[1])
-						PHIAngles = ';' + ';'.join(map(str, phiang))					#PHI angles printed horisantally
-						PSIAngles = ';' + ';'.join(map(str, psiang))					#PSI angles printed horisantally
-						Distances = ';' + ';'.join(map(str , distances))
-						#Fill in remaining positions with 0 until position 150
-						add = 150 - len(SS)
-						fill = list()
-						for zeros in range(add):
-							fill.append('0')
-						filling = ';' + ';'.join(fill)
-						#Write to file
-						line = str(ProteinCount) + SecondaryStructures + filling + Distances + '\n'	#The PHI and PSI angels are not being used because we cannot insert the angels as a feature during Machine Learning prediction, to use add this to the line variable: PHIAngles + filling + PSIAngles + filling
-						thedatafile.write(line)
-						ProteinCount += 1
-						print('[+] GOOD\t' , thefile)
+						#Calculate Rg
+						coord = list()
+						mass = list()
+						Structure = open(TheFile , 'r')
+						for line in Structure:
+							line = line.split()
+							x = float(line[6])
+							y = float(line[7])
+							z = float(line[8])
+							coord.append([x , y , z])
+							if line[11] == 'C':
+								mass.append(12.0107)
+							elif line[11] == 'O':
+								mass.append(15.9994)
+							elif line[11] == 'N':
+								mass.append(14.0067)
+							elif line[11] == 'S':
+								mass.append(32.065)
+						xm = [(m * i , m * j , m * k) for (i , j , k) , m in zip(coord , mass)]
+						tmass = sum(mass)
+						rr = sum(mi * i + mj * j + mk * k for (i , j , k) , (mi , mj , mk) in zip(coord , xm))
+						mm = sum((sum(i) / tmass) ** 2 for i in zip( * xm))
+						rg = math.sqrt(rr / tmass - mm)
+						if rg =< 15:
+							os.remove(TheFile)
+						else:
+							#Renumber residues
+							pdb = open(TheFile , 'r')
+							PDB = open(TheFile + 'X' , 'w')
+							count = 0
+							num = 0
+							AA2 = None
+							for line in pdb:
+								count += 1														#Sequencially number atoms
+								AA1 = line[23:27]													#Sequencially number residues
+								if not AA1 == AA2:
+									num += 1			
+								final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line to have its atoms and residues sequencially labeled, as well as being in chain A
+								AA2 = AA1
+								PDB.write(final_line)													#Write to new file called motif.pdb
+							PDB.close()
+							os.remove(TheFile)
+							os.rename(TheFile + 'X' , TheFile)
+							#Get torsion angles
+							count += 1
+							Tor = list()
+							for model in Bio.PDB.PDBParser().get_structure('X' , TheFile):
+								for chain in model:
+									polypeptides = Bio.PDB.PPBuilder().build_peptides(chain)
+									for poly_index , poly in enumerate(polypeptides):
+										phi_psi = poly.get_phi_psi_list()
+										for res_index , residue in enumerate(poly):
+											#Phi angles
+											if phi_psi[res_index][0] is None:
+												phi = 0
+											else:
+												angle = phi_psi[res_index][0] * 180 / math.pi
+												while angle > 180:
+													angle = angle - 360
+												while angle < -180:
+													angle = angle + 360
+												phi = angle
+											#Psi angles
+											if phi_psi[res_index][1] is None:
+												psi = 0
+											else:
+												angle = phi_psi[res_index][1] * 180 / math.pi
+												while angle > 180:
+													angle = angle - 360
+												while angle < -180:
+													angle = angle + 360
+												psi = angle
+											Tor.append((phi , psi))
+							#Distances
+							structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
+							ppb = Bio.PDB.Polypeptide.PPBuilder()
+							Type = ppb.build_peptides(structure , aa_only=False)
+							model = Type
+							chain = model[0]
+							distances = list()
+							for key , value in {0:1 , 9:11 , 19:21 , 29:31 , 39:41 , 49:51 , 59:61 , 69:71 , 79:81 , 89:91}.items():
+								residue1 = chain[key]
+								residue2 = chain[length - value]
+								atom1 = residue1['CA']
+								atom2 = residue2['CA']
+								distance = atom1-atom2
+								distances.append(distance)
+							#Put info together
+							ss = list()
+							for val in SS:
+								if val == 'L':
+									ss.append('1')
+								elif val == 'H':
+									ss.append('2')
+								elif val == 'S':
+									ss.append('3')
+							SecondaryStructures = ';' + ';'.join(ss)					#Secondary Structures L = 1, H = 2, S = 3 printed horisantally
+							phiang = list()
+							psiang = list()
+							for val in Tor:
+								phiang.append(val[0])
+								psiang.append(val[1])
+							PHIAngles = ';' + ';'.join(map(str, phiang))					#PHI angles printed horisantally
+							PSIAngles = ';' + ';'.join(map(str, psiang))					#PSI angles printed horisantally
+							Distances = ';' + ';'.join(map(str , distances))
+							#Fill in remaining positions with 0 until position 150
+							add = 150 - len(SS)
+							fill = list()
+							for zeros in range(add):
+								fill.append('0')
+							filling = ';' + ';'.join(fill)
+							#Write to file
+							line = str(ProteinCount) + SecondaryStructures + filling + Distances + '\n'	#The PHI and PSI angels are not being used because we cannot insert the angels as a feature during Machine Learning prediction, to use add this to the line variable: PHIAngles + filling + PSIAngles + filling
+							thedatafile.write(line)
+							ProteinCount += 1
+							print('[+] GOOD\t' , thefile)
 	thedatafile.close()
 	os.system('rm -r PDBDatabase')
 
