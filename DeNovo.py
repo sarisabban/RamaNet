@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 import os , re , time , datetime , random , requests , urllib.request , bs4 , math , gzip , Bio.PDB
-from pyrosetta import *
-from pyrosetta.toolbox import *
-init()
+#from pyrosetta import *
+#from pyrosetta.toolbox import *
+#init()
 #--------------------------------------------------------------------------------------------------------------------------------------
 #Functions
 
@@ -282,23 +282,27 @@ def Database(smaller , bigger):
 	pdbfilelist = os.listdir('PDBDatabase')
 	os.chdir('PDBDatabase')
 	for thefile in pdbfilelist:
-		#Open File
-		TheFile = current + '/PDBDatabase/' + thefile
-		TheName = TheFile.split('.')
-		#Extract Each Chain and Save as Different Files
-		InFile = gzip.open(TheFile, 'rb')
-		for line in InFile:
-			line = line.decode()
-			if line.startswith('ATOM'):
-				chain = line[21]
-				Name = TheName[0].split('pdb')
-				output = open(Name[1].upper() + '_' + chain + '.pdb' , 'a')
-				output.write(line)
-				output.close()
-			else:
-				pass
-		print('[+] Extracted' + '\t' + Name[1].upper() , '\t' , chain)
-		os.remove(TheFile)
+		try:
+			#Open File
+			TheFile = current + '/PDBDatabase/' + thefile
+			TheName = TheFile.split('.')
+			#Extract Each Chain and Save as Different Files
+			InFile = gzip.open(TheFile, 'rb')
+			for line in InFile:
+				line = line.decode()
+				if line.startswith('ATOM'):
+					chain = line[21]
+					Name = TheName[0].split('pdb')
+					output = open(Name[1].upper() + '_' + chain + '.pdb' , 'a')
+					output.write(line)
+					output.close()
+				else:
+					pass
+			print('[+] Extracted' + '\t' + Name[1].upper())
+			os.remove(TheFile)
+		except:
+			print('[-] Failed to Extracted' + '\t' + Name[1].upper())
+			os.remove(TheFile)			
 	os.chdir(current)
 	#Remove unwanted structures
 	pdbfilelist = os.listdir('PDBDatabase')
@@ -599,5 +603,4 @@ Draw(filename)
 ML(Data)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
-TheList = GenerateSecondaryStructures()
-Draw(TheList)
+Database(100 , 150)
