@@ -384,13 +384,13 @@ def Database(smaller , bigger):
 							y = float(line[7])
 							z = float(line[8])
 							coord.append([x , y , z])
-							if line[11] == 'C':
+							if line[-1] == 'C':
 								mass.append(12.0107)
-							elif line[11] == 'O':
+							elif line[-1] == 'O':
 								mass.append(15.9994)
-							elif line[11] == 'N':
+							elif line[-1] == 'N':
 								mass.append(14.0067)
-							elif line[11] == 'S':
+							elif line[-1] == 'S':
 								mass.append(32.065)
 						xm = [(m * i , m * j , m * k) for (i , j , k) , m in zip(coord , mass)]
 						tmass = sum(mass)
