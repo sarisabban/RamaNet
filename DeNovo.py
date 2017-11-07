@@ -267,14 +267,14 @@ def Database(smaller , bigger):
 	From = int(smaller)
 	To = int(bigger)
 	#Collect structures
-	os.system('wget -rA .ent.gz ftp://ftp.rcsb.org/pub/pdb/data/structures/divided/pdb/ -P DATABASE')
+#	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
 	current = os.getcwd()
 	os.mkdir('PDBDatabase')
-	filelist = os.listdir('DATABASE/ftp.rcsb.org/pub/pdb/data/structures/divided/pdb')
+	filelist = os.listdir('DATABASE')
 	for directories in filelist:
-		files = os.listdir(current + '/DATABASE/ftp.rcsb.org/pub/pdb/data/structures/divided/pdb/' + directories)
+		files = os.listdir(current + '/DATABASE/' + directories)
 		for afile in files:
-			location = (current + '/DATABASE/ftp.rcsb.org/pub/pdb/data/structures/divided/pdb/' + directories + '/' + afile)
+			location = (current + '/DATABASE/' + directories + '/' + afile)
 			print(location)
 			os.rename(location , current + '/PDBDatabase/' + afile)
 	os.system('rm -r ./DATABASE')
