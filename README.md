@@ -10,15 +10,20 @@ Preforms De Novo Design using Machine Learning and PyRosetta to generates a nove
 ## Description:
 This is a script that uses Machine Learning and PyRosetta to preform De Novo Design (from the beginning) i.e. develop and design a synthetic protein structure totally computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits this topology, then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragment files in preparation for an Abinitio folding simulation. Abinitio folding script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the Abinitio folding simulation might go (idealy you want all positions to be under 2Å RMSD).
 
-The script will generate 1 structure1. It is advised to run this script in an array to generate multiple strctures and see which one has low RMSD fragments. Mind you, if you generate too many structures this might overwhelm the Robetta Server by submitting and requesting too many fragment files, please be considirate and run this script once to generate 1 structure at a time only.
+The script will generate 1 structure. It is advised to run this script in an array to generate multiple strctures and see which one has low RMSD fragments. Mind you, if you generate too many structures this might overwhelm the Robetta Server by submitting and requesting too many fragment files, please be considirate and run this script once to generate 1 structure at a time only.
 
 ## How To Use:
-1. Use the following command to run the script:
+1. Use the following command to generate the Machine Learning Dataset from the Protein Databank Database (computation time ~72 hours and requires ~120GB of free disk space):
+
+`python3 Database.py`
+This script will result in 1 file:
+* data.csv
+
+2. Use the following command to preform DeNovo protein design:
 
 `python3 DeNovo.py`
 
-2. Computation time is very long (around 12 hours).
-3. The Script will result in 7 files:
+This script will result in 7 files:
 * Topology file (DeNovo.pdb)
 * Sequence designed file (structure.pdb)
 * Abinitio input files (structure.pdb, frags.200.3mers, frags.200.9mers, pre.psipred.ss2)
