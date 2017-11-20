@@ -38,11 +38,11 @@ def Database(smaller , bigger):
 			for chain in structure.get_chains():
 				io.set_structure(chain)
 				io.save(structure.get_id() + '_' + chain.get_id() + '.pdb')
-			print('[+] Extracted' + '\t' + thefile.upper())
+			print('\x1b[32m' + '[+] Extracted' + '\t' + thefile.upper() + '\x1b[0m')
 			os.remove(TheFile)
 
 		except:
-			print('[-] Failed to Extracted' + '\t' + thefile.upper())
+			print('\x1b[31m' + '[-] Failed to Extracted' + '\t' + thefile.upper() + '\x1b[0m')
 			os.remove(TheFile)
 	os.chdir(current)
 	#Remove unwanted structures
@@ -57,13 +57,18 @@ def Database(smaller , bigger):
 		Type = ppb.build_peptides(structure , aa_only=True)
 		#Delete non-protein files
 		if Type == []:
-			print('[-] NOT PROTEIN\t' , thefile)
+			print('\x1b[31m' + '[-] NOT PROTEIN\t' , thefile + '\x1b[0m')
 			os.remove(TheFile)
 		else:
 			#Delete structures larger than 150 or smaller than 100 amino acids
-			length = int(str(Type[0]).split()[2].split('=')[1].split('>')[0])
+			parser = Bio.PDB.PDBParser()
+			structure = parser.get_structure('X' , TheFile)
+			model = structure[0]
+			dssp = Bio.PDB.DSSP(model , TheFile , acc_array='Wilke')
+			for aa in dssp:
+				length = aa[0]
 			if length >= To or length <= From:
-				print('[-] WRONG SIZE\t' , thefile)
+				print('\x1b[31m' + '[-] WRONG SIZE\t' , thefile + '\x1b[0m')
 				os.remove(TheFile)
 			else:
 				#Delete structures with none-continuous chains by tracing the chain and measuring all the peptide bonds (aprox = 1.3 angstroms), if the distance between the C and N atoms is larger than 1.3 then there is a chain break
@@ -89,7 +94,7 @@ def Database(smaller , bigger):
 					except:
 						pass
 				if ChainBreak == 'Break':
-					print('[-] CHAIN BREAK\t' , thefile)
+					print('\x1b[31m' + '[-] CHAIN BREAK\t' , thefile + '\x1b[0m')
 					os.remove(TheFile)
 				else:
 					#Get secondary structures
@@ -111,7 +116,7 @@ def Database(smaller , bigger):
 					helix = SS.count('H')
 					strand = SS.count('S')
 					if loop >= helix + strand:
-						print('[-] FLOPPY\t' , thefile)
+						print('\x1b[31m' + '[-] FLOPPY\t' , thefile + '\x1b[0m')
 						os.remove(TheFile)
 					else:
 						#Calculate Rg
@@ -146,7 +151,7 @@ def Database(smaller , bigger):
 						mm = sum((sum(i) / tmass) ** 2 for i in zip( * xm))
 						rg = math.sqrt(rr / tmass - mm)
 						if rg <= 15:
-							print('[-] HIGH Rg\t' , thefile)
+							print('\x1b[31m' + '[-] HIGH Rg\t' , thefile + '\x1b[0m')
 							os.remove(TheFile)
 						else:
 							#Renumber residues
@@ -205,7 +210,7 @@ def Database(smaller , bigger):
 							length = int(str(Type[0]).split()[2].split('=')[1].split('>')[0])
 							distances = list()
 							if length >= To or length <= From:
-								print('[-] WRONG SIZE\t' , thefile)
+								print('\x1b[31m' + '[-] WRONG SIZE\t' , thefile + '\x1b[0m')
 								os.remove(TheFile)
 							else:
 								for key , value in {0:1 , 9:11 , 19:21 , 29:31 , 39:41 , 49:51 , 59:61 , 69:71 , 79:81 , 89:91}.items():
@@ -243,7 +248,7 @@ def Database(smaller , bigger):
 								line = str(ProteinCount) + SecondaryStructures + filling + Distances + '\n'	#The PHI and PSI angels are not being used because we cannot insert the angels as a feature during Machine Learning prediction, to use add this to the line variable: PHIAngles + filling + PSIAngles + filling
 								thedatafile.write(line)
 								ProteinCount += 1
-								print('[+] GOOD\t' , thefile)
+								print('\x1b[32m' + '[+] GOOD\t' , thefile + '\x1b[0m')
 	thedatafile.close()
 	os.system('rm -r PDBDatabase')
 
