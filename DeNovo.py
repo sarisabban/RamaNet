@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
-import os , re , time , datetime , random , requests , urllib.request , bs4 , math , gzip , Bio.PDB , numpy
-#from pyrosetta import *
-#from pyrosetta.toolbox import *
-#init()
+import os , re , time , datetime , random , requests , urllib.request , bs4 , Bio.PDB
+from pyrosetta import *
+from pyrosetta.toolbox import *
+init()
 #--------------------------------------------------------------------------------------------------------------------------------------
 #Functions
 
@@ -261,6 +261,66 @@ def Fragments(pose):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
+def Draw(SecondaryStructureString , DistancesList):
+	''' Draws a protein topology given its secondary structure and distances '''
+	''' Generates the DeNovo.pdb file '''
+	#Length of structure
+	length = len(SecondaryStructureString)
+	#Construct primary structure made of Valines
+	Val = str()
+	for itr in range(length):
+		itr = 'V'
+		Val = Val + itr
+	pose = pose_from_sequence(Val)
+	#Apply torsion angles
+	count = 0
+	for resi in SecondaryStructureString:
+		count += 1
+		if resi == 'H':
+			pose.set_phi(int(count) , -70)
+			pose.set_psi(int(count) , -45)
+		elif resi == 'S':
+			pose.set_phi(int(count) , -110)
+			pose.set_psi(int(count) , 135)
+	#Generate constraints file
+	ConstFile = open('constraints.cst' , 'w')
+	firstAA = 0
+	secndAA = length
+	for distance in DistancesList:
+		if firstAA == 0:
+			line = 'AtomPair CA ' + '1' + ' CA ' + str(secndAA) + ' GAUSSIANFUNC ' + str(distance) + ' 2.0\n'
+			ConstFile.write(line)
+			firstAA += 10
+			secndAA -= 10
+		else:
+			line = 'AtomPair CA ' + str(firstAA) + ' CA ' + str(secndAA) + ' GAUSSIANFUNC ' + str(distance) + ' 2.0\n'
+			ConstFile.write(line)
+			firstAA += 10
+			secndAA -= 10
+	ConstFile.close()
+	#Fold topology
+	constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
+	constraints.constraint_file('constraints.cst')
+	constraints.add_constraints(True)
+	constraints.apply(pose)
+
+
+
+	scorefxn = get_fa_scorefxn()
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	relax.constrain_relax_to_start_coords(True)
+	relax.constrain_coords(True)
+	relax.apply(pose)
+
+
+
+	pose.dump_pdb('DeNovo.pdb')
+	os.remove('constraints.cst')
+
+
+
+
 
 
 
@@ -278,87 +338,20 @@ def Fragments(pose):
 
 
 #MUST STUDY THE RATIO OF HELIX TO STRAND TO LOOP ---> WHAT IS THE PATTERN???
-def GenerateSecondaryStructures():
-		''' Generates a random structure's secondary structures '''
-		''' Generates a list that has each amino acid's secondary structure '''
-		#Generate structure size
-		size = random.randint(120 , 130)						#Random protein size
-		#Construct the loops
-		info = list()
-		for number in range(random.randint(1 , 4)):					#Randomly choose weather to add 3, 4, or 5 different loops
-			Loop = random.randint(0 , 1)						#Randomly choose weather to add a 3 residue loop or a 4 residue loop
-			if Loop == 0:
-				position = random.randint(1 , size)				#Randomly choose where these loops are added
-				info.append((position , 3))
-			else:
-				position = random.randint(1 , size)
-				info.append((position , 4))
-		#Generate the list
-		ss = list()
-		for residues in range(size):
-			for x in info:
-				if residues == x[0]:
-					for y in range(x[1]):
-						ss.append('1')					#Loop insert
-			ss.append('2')								#Helix insert
-		add = 150 - len(ss)
-		for zeros in range(add):
-			ss.append('0')
-		return(ss)
+def GenSecStruct():
+	''' Generates a random structure's secondary structures '''
+	''' Returns a string that has each amino acid's secondary structure '''
+	#Generate structure size
+	size = random.randint(100 , 150)			#Random protein size
+	#Generate loops
+	#Generate helices
+	#Generate strands
+	#Put together
 
 
-
-
-
-
-
-def Draw(TheList):
-	''' Draws the torsion angles to generate a .pdb file '''
-	''' Generates the DeNovo.pdb file '''
-	#Length of structure
-	count = 0
-	for resi in TheList:
-		if resi == '0':
-			pass
-		else:
-			count += 1
-			size = count
-	#Construct primary structure made of Valines
-	Val = str()
-	for itr in range(size):
-		itr = 'V'
-		Val = Val + itr
-	pose = pose_from_sequence(Val)
-	#Apply torsion angles
-	count = 0
-	for resi in TheList:
-		count += 1
-		if resi == '0':
-			pass
-		elif resi == '1':
-			pose.set_phi(int(count) , 60)
-			pose.set_psi(int(count) , 30)
-		elif resi == '2':
-			pose.set_phi(int(count) , -90)
-			pose.set_psi(int(count) , -30)
-		elif resi == '3':
-			pose.set_phi(int(count) , -120)
-			pose.set_psi(int(count) , 120)
-	#Satisfy distances
-	pass
-#	Relax(pose)
-	pose.dump_pdb('DeNovo.pdb')
-#	WHEN DRAWING, MAKE SURE YOU RESTRICT THE ANGLES TO THE RAMA PLOT (STRANG ANGEL RANGE TOP LEFT OF PLOT), (HELIX ANGEL RANGE BOTTOM LEFT OF PLOT), AND (LOOP ANGEL RANGE TOP RIGHT OF MODEL) !!!!! + SATISFY THE CONSTRAINTS FROM THE MACHINE LEARNING PREDICTION !!!!!
-
-
-
-
-
-
-
-
-
-def ML(directory):
+def ML(CSV_FILE):
+	''' Takes the data.csv and learns the distances pattern given the secondary structure of each amino acid, this is to allow it to generate distances in an effort to fold a topology into a logical protein structure '''
+	''' Returns a list of the distances between spesific parts of the protein that can be used as constrains when drawing and folding the DeNovo protein's topology '''
 	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
 '''
@@ -366,9 +359,11 @@ Relax(pose)
 SASA(pose)
 Design(pose)
 Fragments(pose)
-	TheList = GenerateSecondaryStructures()
-	Draw(filename)
-	ML(Data)
+SS = GenSecStruct()
+dist = ML('Data.csv')
+Draw(SS , dist)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
-
+SS = 'LLLHHHHHHHHHLLLLLLLLLHHHHHHHHHHHLLLLLLLLLLSSSSSLLLHHHHHHHHHLSSSLLLLLLLLSSSLLLLSSSSSSSSLLLLSLLSLLSSSSSSSSLSSSSSSLLLLSSSSSSSSL'
+dist = [46.2503 , 40.3013 , 25.9238 , 11.769 , 11.1069 , 16.1582 , 12.93 , 18.1924 , 14.2343 , 16.1879]
+Draw(SS , dist)
