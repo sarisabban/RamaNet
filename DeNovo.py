@@ -1,19 +1,11 @@
 #!/usr/bin/python3
 
 import os , re , time , datetime , random , requests , urllib.request , bs4 , Bio.PDB
-from pyrosetta import *
-from pyrosetta.toolbox import *
-init()
+#from pyrosetta import *
+#from pyrosetta.toolbox import *
+#init()
 #--------------------------------------------------------------------------------------------------------------------------------------
 #Functions
-
-def Relax(pose):
-	''' Relaxes a structure '''
-	''' Updates the original pose with the relaxed pose '''
-	scorefxn = get_fa_scorefxn()
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relax.set_scorefxn(scorefxn)
-	relax.apply(pose)
 
 def SASA(pose):
 	''' Calculates the different layers (Surface, Boundery, Core) of a structure according its SASA (solvent-accessible surface area) '''
@@ -85,9 +77,11 @@ def Design(pose):
 	''' Applies FastDesign to change the whole structure's amino acids (one layer at a time as well as designing towards an optimally packed core) while maintaining the same backbone. Should be faster than the Whole method and results in a better final structure than the Layer method '''
 	''' Generates the Designed.pdb file '''
 	#A - Relax original structure
-	scorefxn = get_fa_scorefxn()												#Call the score function
 	score1_original_before_relax = scorefxn(pose)										#Measure score before relaxing
-	Relax(pose)														#Relax structure
+	scorefxn = get_fa_scorefxn()
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	relax.apply(pose)
 	score2_original_after_relax = scorefxn(pose)										#Measure score after relaxing
 	#B - FastDesign protocol												#Uses Generic Monte Carlo with PackStat as a filter to direct FastDesign towards an optimally packed structure core
 	chain = pose.pdb_info().chain(1)											#Identify chain
@@ -129,7 +123,7 @@ def Design(pose):
 		MC.apply(pose)													#Apply Move
 		os.remove('Resfile.resfile')											#To keep working directory clean, and to make sure each Resfile has the info for each layer only and they do not get mixed and appended together in one Resfile
 	#C - Relax pose
-	Relax(pose)														#Relax structure
+	relax.apply(pose)
 	#D - Output result
 	score3_of_design_after_relax = scorefxn(pose)										#Measure score of designed pose
 	pose.dump_pdb('structure.pdb')												#Export final pose into a .pdb structure file
@@ -277,11 +271,11 @@ def Draw(SecondaryStructureString , DistancesList):
 	for resi in SecondaryStructureString:
 		count += 1
 		if resi == 'H':
-			pose.set_phi(int(count) , -70)
-			pose.set_psi(int(count) , -45)
+			pose.set_phi(int(count) , -57.8)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
+			pose.set_psi(int(count) , -47.0)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
 		elif resi == 'S':
-			pose.set_phi(int(count) , -110)
-			pose.set_psi(int(count) , 135)
+			pose.set_phi(int(count) , -120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
+			pose.set_psi(int(count) , 120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
 	#Generate constraints file
 	ConstFile = open('constraints.cst' , 'w')
 	firstAA = 0
@@ -337,16 +331,82 @@ def Draw(SecondaryStructureString , DistancesList):
 
 
 
-#MUST STUDY THE RATIO OF HELIX TO STRAND TO LOOP ---> WHAT IS THE PATTERN???
 def GenSecStruct():
 	''' Generates a random structure's secondary structures '''
 	''' Returns a string that has each amino acid's secondary structure '''
-	#Generate structure size
-	size = random.randint(100 , 150)			#Random protein size
-	#Generate loops
+	#The secondary structure ratios
+	Ratio_H_to_S_Number = [2 , 5]###########################################MUST STUDY THE RATIO OF HELIX TO STRAND TO LOOP ---> WHAT IS THE PATTERN???
+	Ratio_H_to_S_Size = [10 , 10]###########################################MUST STUDY THE RATIO OF HELIX TO STRAND TO LOOP ---> WHAT IS THE PATTERN???
+	#Generate Random protein size
+	size = random.randint(100 , 150)
+	helix_number = Ratio_H_to_S_Number[0]
+	helix_size = Ratio_H_to_S_Size[0]
+	strand_number = Ratio_H_to_S_Number[1]
+	strand_size = Ratio_H_to_S_Size[1]
 	#Generate helices
+	Helix = list()
+	for numb in range(helix_number):
+		Hsize = list()
+		for H in range(helix_size):
+			Hsize.append('H')
+		Ahelix = ''.join(Hsize)
+		Helix.append(Ahelix)
 	#Generate strands
+	Strand = list()
+	for numb in range(strand_number):
+		Ssize = list()
+		for S in range(strand_size):
+			Ssize.append('S')
+		Astrand = ''.join(Ssize)
+		Strand.append(Astrand)
+	#Generate loops
+	while True:
+		order = Helix + Strand
+		random.shuffle(order)
+		HandS_size = (helix_size * helix_number) + (strand_size * strand_number)
+		loop_number = len(order) - 1
+		loop_size = size - HandS_size - 2
+		Ls = list()
+		for numb in range(loop_size):
+			Ls.append('L')
+		for chunk in range(loop_number):
+			Ls.append('.')
+		random.shuffle(Ls)
+		Ls = ''.join(Ls)
+		Loop = Ls.split('.')
+		decision = None
+		for check in Loop:
+			if len(check) < 3:
+				decision = 'Bad'
+				break
+			else:
+				decision = 'Good'
+		if decision == 'Good':
+			break
+		else:
+			continue
 	#Put together
+	protein = ['L']
+	count = 0
+	while True:
+		try:
+			protein.append(order[count])
+			protein.append(Loop[count])
+			count += 1
+		except:
+			break
+	protein.append('L')
+	protein = ''.join(protein)
+
+	return(protein)
+
+
+
+
+
+
+
+
 
 
 def ML(CSV_FILE):
@@ -355,7 +415,6 @@ def ML(CSV_FILE):
 	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
 '''
-Relax(pose)
 SASA(pose)
 Design(pose)
 Fragments(pose)
@@ -366,4 +425,7 @@ Draw(SS , dist)
 #--------------------------------------------------------------------------------------------------------------------------------------
 SS = 'LLLHHHHHHHHHLLLLLLLLLHHHHHHHHHHHLLLLLLLLLLSSSSSLLLHHHHHHHHHLSSSLLLLLLLLSSSLLLLSSSSSSSSLLLLSLLSLLSSSSSSSSLSSSSSSLLLLSSSSSSSSL'
 dist = [46.2503 , 40.3013 , 25.9238 , 11.769 , 11.1069 , 16.1582 , 12.93 , 18.1924 , 14.2343 , 16.1879]
-Draw(SS , dist)
+#Draw(SS , dist)
+
+SS = GenSecStruct()
+print(SS)
