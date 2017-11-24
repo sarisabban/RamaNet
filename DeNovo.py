@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 import os , re , time , datetime , random , requests , urllib.request , bs4 , Bio.PDB
-#from pyrosetta import *
-#from pyrosetta.toolbox import *
-#init()
+from pyrosetta import *
+from pyrosetta.toolbox import *
+init()
 #--------------------------------------------------------------------------------------------------------------------------------------
 #Functions
 
@@ -300,6 +300,11 @@ def Draw(SecondaryStructureString , DistancesList):
 
 
 
+#	X = pyrosetta.rosetta.protocols.relax.AtomCoordinateCstMover()
+#	X.set_type('AtomPair CA 1 CA 124 GAUSSIANFUNC 1.0 1.0')
+#	X.apply(pose)
+
+
 	scorefxn = get_fa_scorefxn()
 	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
 	relax.set_scorefxn(scorefxn)
@@ -425,7 +430,4 @@ Draw(SS , dist)
 #--------------------------------------------------------------------------------------------------------------------------------------
 SS = 'LLLHHHHHHHHHLLLLLLLLLHHHHHHHHHHHLLLLLLLLLLSSSSSLLLHHHHHHHHHLSSSLLLLLLLLSSSLLLLSSSSSSSSLLLLSLLSLLSSSSSSSSLSSSSSSLLLLSSSSSSSSL'
 dist = [46.2503 , 40.3013 , 25.9238 , 11.769 , 11.1069 , 16.1582 , 12.93 , 18.1924 , 14.2343 , 16.1879]
-#Draw(SS , dist)
-
-SS = GenSecStruct()
-print(SS)
+Draw(SS , dist)
