@@ -5,8 +5,8 @@ import os , math , gzip , Bio.PDB
 def Database(To , From):
 	''' A small script that cleans the PDB database, then isolates the secondary structure and the Phi/Psi torsion angles from each .pdb file '''
 	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .csv files for all .pdb files '''
-	From = int(smaller)
-	To = int(bigger)
+	From = int(From)
+	To = int(To)
 	#Collect structures
 	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
 	thedatafile = open('data.csv' , 'a')
