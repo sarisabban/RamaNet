@@ -2,7 +2,7 @@
 
 import os , math , gzip , Bio.PDB
 
-def Database(smaller , bigger):
+def Database(To , From):
 	''' A small script that cleans the PDB database, then isolates the secondary structure and the Phi/Psi torsion angles from each .pdb file '''
 	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .csv files for all .pdb files '''
 	From = int(smaller)
