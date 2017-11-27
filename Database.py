@@ -1,30 +1,32 @@
 #!/usr/bin/python3
 
-import os , math , gzip , Bio.PDB
+import os , math , gzip , Bio.PDB , tqdm
 
 def Database(From , To):
 	''' A small script that cleans the PDB database, then isolates the secondary structure and the Phi/Psi torsion angles from each .pdb file '''
 	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .csv files for all .pdb files '''
 	#Collect structures
-#	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
+	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
 	thedatafile = open('data.csv' , 'a')
 	thedatafile.write(';FILENAME;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;96;97;98;99;100;101;102;103;104;105;106;107;108;109;110;111;112;113;114;115;116;117;118;119;120;121;122;123;124;125;126;127;128;129;130;131;132;133;134;135;136;137;138;139;140;141;142;143;144;145;146;147;148;149;150;Distance_1;Distance_2;Distance_3;Distance_4;Distance_5;Distance_6;Distance_7;Distance_8;Distance_9;Distance_10\n')
 	thedatafile.close()
 	current = os.getcwd()
 	os.mkdir('PDBDatabase')
 	filelist = os.listdir('DATABASE')
-	for directories in filelist:
+	print('\x1b[32m' + 'Moving Files' + '\x1b[0m')
+	for directories in tqdm.tqdm(filelist):
 		files = os.listdir(current + '/DATABASE/' + directories)
 		for afile in files:
 			location = (current + '/DATABASE/' + directories + '/' + afile)
-			print(location)
+			#print(location)
 			os.rename(location , current + '/PDBDatabase/' + afile)
 	os.system('rm -r ./DATABASE')
 	#Clean Database
 	pdbfilelist = os.listdir('PDBDatabase')
 	io = Bio.PDB.PDBIO()
 	os.chdir('PDBDatabase')
-	for thefile in pdbfilelist:
+	print('\x1b[32m' + 'Extracting Files' + '\x1b[0m')
+	for thefile in tqdm.tqdm(pdbfilelist):
 		try:
 			#Open file
 			TheFile = current + '/PDBDatabase/' + thefile
@@ -37,11 +39,10 @@ def Database(From , To):
 			for chain in structure.get_chains():
 				io.set_structure(chain)
 				io.save(structure.get_id() + '_' + chain.get_id() + '.pdb')
-			print('\x1b[32m' + '[+] Extracted' + '\t' + thefile.upper() + '\x1b[0m')
+			#print('\x1b[32m' + '[+] Extracted' + '\t' + thefile.upper() + '\x1b[0m')
 			os.remove(TheFile)
-
 		except Exception as TheError:
-			print('\x1b[31m' + '[-] Failed to Extracted' + '\t' + thefile.upper() , '\x1b[33m' + str(TheError) + '\x1b[0m')
+			#print('\x1b[31m' + '[-] Failed to Extracted' + '\t' + thefile.upper() , '\x1b[33m' + str(TheError) + '\x1b[0m')
 			os.remove(TheFile)
 	os.chdir(current)
 	#Remove unwanted structures
@@ -49,7 +50,8 @@ def Database(From , To):
 	pdbfilelist = os.listdir('PDBDatabase')
 	ProteinCount = 1
 	current = os.getcwd()
-	for thefile in pdbfilelist:
+	print('\x1b[32m' + 'Building Dataset' + '\x1b[0m')
+	for thefile in tqdm.tqdm(pdbfilelist):
 		try:
 			TheFile = current + '/PDBDatabase/' + thefile
 			structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
@@ -57,7 +59,7 @@ def Database(From , To):
 			Type = ppb.build_peptides(structure , aa_only=True)
 			#Delete non-protein files
 			if Type == []:
-				print('\x1b[31m' + '[-] NOT PROTEIN\t' , thefile + '\x1b[0m')
+				#print('\x1b[31m' + '[-] NOT PROTEIN\t' , thefile + '\x1b[0m')
 				os.remove(TheFile)
 			else:
 				#Delete structures larger than 150 or smaller than 100 amino acids
@@ -68,7 +70,7 @@ def Database(From , To):
 				for aa in dssp:
 					length = aa[0]
 				if length >= int(To) or length <= int(From):
-					print('\x1b[31m' + '[-] WRONG SIZE\t' , thefile + '\x1b[0m')
+					#print('\x1b[31m' + '[-] WRONG SIZE\t' , thefile + '\x1b[0m')
 					os.remove(TheFile)
 				else:
 					#Delete structures with none-continuous chains by tracing the chain and measuring all the peptide bonds (aprox = 1.3 angstroms), if the distance between the C and N atoms is larger than 1.3 then there is a chain break
@@ -94,7 +96,7 @@ def Database(From , To):
 						except:
 							pass
 					if ChainBreak == 'Break':
-						print('\x1b[31m' + '[-] CHAIN BREAK\t' , thefile + '\x1b[0m')
+						#print('\x1b[31m' + '[-] CHAIN BREAK\t' , thefile + '\x1b[0m')
 						os.remove(TheFile)
 					else:
 						#Get secondary structures
@@ -116,7 +118,7 @@ def Database(From , To):
 						helix = SS.count('H')
 						strand = SS.count('S')
 						if loop >= helix + strand:
-							print('\x1b[31m' + '[-] FLOPPY\t' , thefile + '\x1b[0m')
+							#print('\x1b[31m' + '[-] FLOPPY\t' , thefile + '\x1b[0m')
 							os.remove(TheFile)
 						else:
 							#Calculate Rg
@@ -151,7 +153,7 @@ def Database(From , To):
 							mm = sum((sum(i) / tmass) ** 2 for i in zip( * xm))
 							rg = math.sqrt(rr / tmass - mm)
 							if rg <= 15:
-								print('\x1b[31m' + '[-] HIGH Rg\t' , thefile + '\x1b[0m')
+								#print('\x1b[31m' + '[-] HIGH Rg\t' , thefile + '\x1b[0m')
 								os.remove(TheFile)
 							else:
 								#Renumber residues
@@ -249,9 +251,10 @@ def Database(From , To):
 								thedatafile.write(line)
 								thedatafile.close()
 								ProteinCount += 1
-								print('\x1b[32m' + '[+] GOOD\t' , thefile + '\x1b[0m')
+								#print('\x1b[32m' + '[+] GOOD\t' , thefile + '\x1b[0m')
 		except Exception as TheError:
-			print('\x1b[31m' + '[-] Script Crashed' + '\t' + thefile.upper() , '\x1b[33m' + str(TheError) + '\x1b[0m')
+			#print('\x1b[31m' + '[-] Script Crashed' + '\t' + thefile.upper() , '\x1b[33m' + str(TheError) + '\x1b[0m')
+			pass
 	thedatafile.close()
 #	os.system('rm -r PDBDatabase')
 
