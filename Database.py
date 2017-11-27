@@ -2,15 +2,14 @@
 
 import os , math , gzip , Bio.PDB
 
-def Database(To , From):
+def Database(From , To):
 	''' A small script that cleans the PDB database, then isolates the secondary structure and the Phi/Psi torsion angles from each .pdb file '''
 	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .csv files for all .pdb files '''
-	From = int(From)
-	To = int(To)
 	#Collect structures
 	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./DATABASE')
 	thedatafile = open('data.csv' , 'a')
 	thedatafile.write(';1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;96;97;98;99;100;101;102;103;104;105;106;107;108;109;110;111;112;113;114;115;116;117;118;119;120;121;122;123;124;125;126;127;128;129;130;131;132;133;134;135;136;137;138;139;140;141;142;143;144;145;146;147;148;149;150;Distance_1;Distance_2;Distance_3;Distance_4;Distance_5;Distance_6;Distance_7;Distance_8;Distance_9;Distance_10;\n')
+	thedatafile.close()
 	current = os.getcwd()
 	os.mkdir('PDBDatabase')
 	filelist = os.listdir('DATABASE')
@@ -41,8 +40,8 @@ def Database(To , From):
 			print('\x1b[32m' + '[+] Extracted' + '\t' + thefile.upper() + '\x1b[0m')
 			os.remove(TheFile)
 
-		except:
-			print('\x1b[31m' + '[-] Failed to Extracted' + '\t' + thefile.upper() + '\x1b[0m')
+		except Exception as TheError:
+			print('\x1b[31m' + '[-] Failed to Extracted' + '\t' + thefile.upper() , '\x1b[33m' + str(TheError) + '\x1b[0m')
 			os.remove(TheFile)
 	os.chdir(current)
 	#Remove unwanted structures
@@ -68,7 +67,7 @@ def Database(To , From):
 				dssp = Bio.PDB.DSSP(model , TheFile , acc_array='Wilke')
 				for aa in dssp:
 					length = aa[0]
-				if length >= To or length <= From:
+				if length >= int(To) or length <= int(From):
 					print('\x1b[31m' + '[-] WRONG SIZE\t' , thefile + '\x1b[0m')
 					os.remove(TheFile)
 				else:
@@ -172,6 +171,7 @@ def Database(To , From):
 								PDB.close()
 								os.remove(TheFile)
 								os.rename(TheFile + 'X' , TheFile)
+								'''
 								#Get torsion angles
 								count += 1
 								Tor = list()
@@ -202,57 +202,59 @@ def Database(To , From):
 														angle = angle + 360
 													psi = angle
 												Tor.append((phi , psi))
+								'''
 								#Distances
 								structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
 								ppb = Bio.PDB.Polypeptide.PPBuilder()
-								Type = ppb.build_peptides(structure , aa_only=False)
+								Type = ppb.build_peptides(structure , aa_only=True)
 								model = Type
 								chain = model[0]
-								length = int(str(Type[0]).split()[2].split('=')[1].split('>')[0])
 								distances = list()
-								if length >= To or length <= From:
-									print('\x1b[31m' + '[-] WRONG SIZE\t' , thefile + '\x1b[0m')
-									os.remove(TheFile)
-								else:
-									for key , value in {0:1 , 9:11 , 19:21 , 29:31 , 39:41 , 49:51 , 59:61 , 69:71 , 79:81 , 89:91}.items():
-										residue1 = chain[key]
-										residue2 = chain[length - value]
-										atom1 = residue1['CA']
-										atom2 = residue2['CA']
-										distance = atom1-atom2
-										distances.append(distance)
-									#Put info together
-									ss = list()
-									for val in SS:
-										if val == 'L':
-											ss.append('1')
-										elif val == 'H':
-											ss.append('2')
-										elif val == 'S':
-											ss.append('3')
-									SecondaryStructures = ';' + ';'.join(ss)					#Secondary Structures L = 1, H = 2, S = 3 printed horisantally
-									phiang = list()
-									psiang = list()
-									for val in Tor:
-										phiang.append(val[0])
-										psiang.append(val[1])
-									PHIAngles = ';' + ';'.join(map(str, phiang))					#PHI angles printed horisantally
-									PSIAngles = ';' + ';'.join(map(str, psiang))					#PSI angles printed horisantally
-									Distances = ';' + ';'.join(map(str , distances))
-									#Fill in remaining positions with 0 until position 150
-									add = 150 - len(SS)
-									fill = list()
-									for zeros in range(add):
-										fill.append('0')
-									filling = ';' + ';'.join(fill)
-									#Write to file
-									line = str(ProteinCount) + SecondaryStructures + filling + Distances + '\n'	#The PHI and PSI angels are not being used because we cannot insert the angels as a feature during Machine Learning prediction, to use add this to the line variable: PHIAngles + filling + PSIAngles + filling
-									thedatafile.write(line)
-									ProteinCount += 1
-									print('\x1b[32m' + '[+] GOOD\t' , thefile + '\x1b[0m')
-		except:
-			print('\x1b[31m' + '[-] Script Crashed' + '\t' + thefile.upper() + '\x1b[0m')
+								for key , value in {0:1 , 9:11 , 19:21 , 29:31 , 39:41 , 49:51 , 59:61 , 69:71 , 79:81 , 89:91}.items():
+									residue1 = chain[key]
+									residue2 = chain[length - value]
+									atom1 = residue1['CA']
+									atom2 = residue2['CA']
+									distance = atom1-atom2
+									distances.append(distance)
+								#Put info together
+								ss = list()
+								for val in SS:
+									if val == 'L':
+										ss.append('1')
+									elif val == 'H':
+										ss.append('2')
+									elif val == 'S':
+										ss.append('3')
+								SecondaryStructures = ';' + ';'.join(ss)					#Secondary Structures L = 1, H = 2, S = 3 printed horisantally
+								'''
+								phiang = list()
+								psiang = list()
+								for val in Tor:
+									phiang.append(val[0])
+									psiang.append(val[1])
+								PHIAngles = ';' + ';'.join(map(str, phiang))					#PHI angles printed horisantally
+								PSIAngles = ';' + ';'.join(map(str, psiang))					#PSI angles printed horisantally
+								'''
+								Distances = ';' + ';'.join(map(str , distances))
+								#Fill in remaining positions with 0 until position 150
+								add = 150 - len(SS)
+								fill = list()
+								for zeros in range(add):
+									fill.append('0')
+								filling = ';' + ';'.join(fill)
+								#Write to file
+								line = str(ProteinCount) + SecondaryStructures + filling + Distances + '\n'	#The PHI and PSI angels are not being used because we cannot insert the angels as a feature during Machine Learning prediction, to use add this to the line variable: PHIAngles + filling + PSIAngles + filling
+								thedatafile = open('data.csv' , 'a')
+								thedatafile.write(line)
+								thedatafile.close()
+								ProteinCount += 1
+								print('\x1b[32m' + '[+] GOOD\t' , thefile + '\x1b[0m')
+		except Exception as TheError:
+			print('\x1b[31m' + '[-] Script Crashed' + '\t' + thefile.upper() , '\x1b[33m' + str(TheError) + '\x1b[0m')
 	thedatafile.close()
 	os.system('rm -r PDBDatabase')
+
+
 
 Database(100 , 150)
