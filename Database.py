@@ -2,7 +2,7 @@
 
 import os , math , gzip , Bio.PDB , tqdm
 
-def Database(From , To):
+def Database(From , To , Rg):
 	''' A small script that cleans the PDB database, then isolates the secondary structure and the Phi/Psi torsion angles from each .pdb file '''
 	''' Will generate the PDBDatabase directory with all the cleaned .pdb structures inside it, and the Data directory that contains the .csv files for all .pdb files '''
 	#Collect structures
@@ -152,7 +152,7 @@ def Database(From , To):
 							rr = sum(mi * i + mj * j + mk * k for (i , j , k) , (mi , mj , mk) in zip(coord , xm))
 							mm = sum((sum(i) / tmass) ** 2 for i in zip( * xm))
 							rg = math.sqrt(rr / tmass - mm)
-							if rg <= 15:
+							if rg <= Rg:
 								#print('\x1b[31m' + '[-] HIGH Rg\t' , thefile + '\x1b[0m')
 								os.remove(TheFile)
 							else:
@@ -256,8 +256,8 @@ def Database(From , To):
 			#print('\x1b[31m' + '[-] Script Crashed' + '\t' + thefile.upper() , '\x1b[33m' + str(TheError) + '\x1b[0m')
 			pass
 	thedatafile.close()
-#	os.system('rm -r PDBDatabase')
+	os.system('rm -r PDBDatabase')
 
 
 
-Database(100 , 150)
+Database(100 , 150 , 15)
