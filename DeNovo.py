@@ -16,7 +16,7 @@ def SASA(pose):
 	parser = Bio.PDB.PDBParser()
 	structure = parser.get_structure('X' , 'ToDesign.pdb')
 	model = structure[0]
-	dssp = Bio.PDB.DSSP(model , 'ToDesign.pdb' , acc_array='Wilke')
+	dssp = Bio.PDB.DSSP(model , 'ToDesign.pdb' , acc_array = 'Wilke')
 	#Loop to get SASA for each amino acid
 	lis = list()
 	count = 0
@@ -266,16 +266,6 @@ def Draw(SecondaryStructureString , DistancesList):
 		itr = 'V'
 		Val = Val + itr
 	pose = pose_from_sequence(Val)
-	#Apply torsion angles
-	count = 0
-	for resi in SecondaryStructureString:
-		count += 1
-		if resi == 'H':
-			pose.set_phi(int(count) , -57.8)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
-			pose.set_psi(int(count) , -47.0)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
-		elif resi == 'S':
-			pose.set_phi(int(count) , -120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
-			pose.set_psi(int(count) , 120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
 	#Generate constraints file
 	ConstFile = open('constraints.cst' , 'w')
 	firstAA = 0
@@ -293,35 +283,46 @@ def Draw(SecondaryStructureString , DistancesList):
 			secndAA -= 10
 	ConstFile.close()
 	#Fold topology
-	constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
-	constraints.constraint_file('constraints.cst')
-	constraints.add_constraints(True)
-	constraints.apply(pose)
-
-
-
-#	X = pyrosetta.rosetta.protocols.relax.AtomCoordinateCstMover()
-#	X.set_type('AtomPair CA 1 CA 124 GAUSSIANFUNC 1.0 1.0')
-#	X.apply(pose)
-
-
-	scorefxn = get_fa_scorefxn()
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relax.set_scorefxn(scorefxn)
-	relax.constrain_relax_to_start_coords(True)
-	relax.constrain_coords(True)
-	relax.apply(pose)
-
-
-
+	for repeat in range(3):
+		#Apply torsion angles
+		count = 0
+		for resi in SecondaryStructureString:
+			count += 1
+			if resi == 'H':
+				pose.set_phi(int(count) , -57.8)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
+				pose.set_psi(int(count) , -47.0)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
+			elif resi == 'S':
+				pose.set_phi(int(count) , -120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
+				pose.set_psi(int(count) , 120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
+		#Add constraints option to pose
+		constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
+		constraints.constraint_file('constraints.cst')
+		constraints.add_constraints(True)
+		constraints.apply(pose)
+		#Score function with weight on only atom_pair_constraint
+		scorefxn = ScoreFunction()
+		scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.atom_pair_constraint , 	1.0)
+		#Constraint relax to bring atoms together
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		relax.constrain_relax_to_start_coords(True)
+		relax.constrain_coords(True)
+		relax.apply(pose)
+		#Normal FastRelax with constraints
+		scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('ref2015_cst')
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		relax.constrain_relax_to_start_coords(True)
+		relax.constrain_coords(True)
+		relax.apply(pose)
+		#Normal FastRelax without constraints
+		scorefxn = get_fa_scorefxn()
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		relax.apply(pose)
+	#Export
 	pose.dump_pdb('DeNovo.pdb')
-	os.remove('constraints.cst')
-
-
-
-
-
-
+#	os.remove('constraints.cst')
 
 
 
@@ -430,4 +431,6 @@ Draw(SS , dist)
 #--------------------------------------------------------------------------------------------------------------------------------------
 SS = 'LLLHHHHHHHHHLLLLLLLLLHHHHHHHHHHHLLLLLLLLLLSSSSSLLLHHHHHHHHHLSSSLLLLLLLLSSSLLLLSSSSSSSSLLLLSLLSLLSSSSSSSSLSSSSSSLLLLSSSSSSSSL'
 dist = [46.2503 , 40.3013 , 25.9238 , 11.769 , 11.1069 , 16.1582 , 12.93 , 18.1924 , 14.2343 , 16.1879]
+#SS = 'LSSSSLLLLLLHHHHHHHHHHHHHHHHHHLSSSSSSLHHHHHHHHHHHHHHHHLSSSSSSLHHHLSSSSSSLLL' #87
+#dist = [1.0]
 Draw(SS , dist)
