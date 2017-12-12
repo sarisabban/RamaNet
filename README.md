@@ -21,7 +21,7 @@ This script will result in 1 file:
 
 * data.csv
 
-The default parameters for the Database.py script is isolating proteins between 100 and 150 amino acids, and with an Rg value of less than 15. The script results in a dataset with the first column is the training example number, then the name of the PDB file, then the type of secondary structure at each amino acid position [0 = Nothing or empty (i.e a short protein) , 1 = Loop , 2 = Helix , 3 = Strand], then there are the constraint distances starting with the distance in angstrom between the first and last amino acids, then between 10 amino acids from the first position and 10 amino acids from the last position, etc...
+The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, and with an Rg value of less than 15. The script results in a dataset with the first column is the training example number, then the name of the PDB file, then the type of secondary structure at each amino acid position [0 = Nothing or empty (i.e a short protein) , 1 = Loop , 2 = Helix , 3 = Strand], then there are the constraint distances between the first amino acid and the second, then third, then forth etc... If errors occure it is fine, some protein files will cause errors (they will be deleted), but the script should continue to the end and result in a dataset.
 
 2. Use the following command to preform DeNovo protein design:
 

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os , math , gzip , Bio.PDB , tqdm
+import os , math , gzip , Bio.PDB , Bio.pairwise2 , tqdm
 
 def Database(TempDIR , FinalDIR):
 	''' Downloads the entire PDB database from https://www.wwpdb.org/, moves all files into one directory, then uncompresses all the files '''
@@ -29,7 +29,7 @@ def Extract(directory):
 		try:
 			TheName = TheFile.split('.')[0].split('pdb')[1].upper()				#Open file
 			InFile = gzip.open(TheFile, 'rt')						#Extract file
-			structure = Bio.PDB.PDBParser(QUIET=True).get_structure(TheName , InFile)	#Separate chains and save to different files
+			structure = Bio.PDB.PDBParser(QUIET = True).get_structure(TheName , InFile)	#Separate chains and save to different files
 			count = 0
 			for chain in structure.get_chains():
 				io.set_structure(chain)
@@ -45,11 +45,11 @@ def NonProtein(directory):
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
-	print('\x1b[32m' + 'Deleting none-protein files' + '\x1b[0m')
+	print('\x1b[32m' + 'Deleting none-protein structures' + '\x1b[0m')
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
+		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
 		ppb = Bio.PDB.Polypeptide.PPBuilder()
-		Type = ppb.build_peptides(structure , aa_only=True)
+		Type = ppb.build_peptides(structure , aa_only = True)
 		if Type == []:										#Non-protein structures have Type = []
 			os.remove(TheFile)
 		else:
@@ -83,29 +83,14 @@ def Break(directory):
 	os.chdir(directory)
 	print('\x1b[32m' + 'Removing structures with non-continuous chains' + '\x1b[0m')
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
+		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
 		ppb = Bio.PDB.Polypeptide.PPBuilder()
-		Type = ppb.build_peptides(structure , aa_only=True)
-		model = Type
-		modelDSSP = structure[0]
-		chain = model[0]
-		dssp = Bio.PDB.DSSP(modelDSSP , TheFile , acc_array = 'Wilke')
-		for aa in dssp:									#Identify final structure's length
-			length = aa[0]
-		count = 0
-		ChainBreak = None
-		for bond in range(length):
-			residue1 = chain[count]
-			residue2 = chain[count + 1]
-			atom1 = residue1['C']
-			atom2 = residue2['N']
-			distance = atom1-atom2
-			if distance > 1.4:
-				ChainBreak = 'Break'
-			else:
-				pass
-		if ChainBreak == 'Break':
+		Type = ppb.build_peptides(structure , aa_only = True)
+		try:
+			x = Type[1]
 			os.remove(TheFile)
+		except:
+			continue
 	os.chdir(current)
 
 def Loops(directory , LoopLength):
@@ -165,42 +150,65 @@ def Renumber(directory):
 		os.rename(TheFile + 'X' , TheFile)
 	os.chdir(current)
 
-
-
-
-
-
-
-
-
-
-
-
 def RMSD(directory , RMSDcutoff):
 	''' Remove structures that are similar to each other '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
 	print('\x1b[32m' + 'Removing structure with similar RMSD' + '\x1b[0m')
-	for TheFile in tqdm.tqdm(pdbfilelist):
-		print(TheFile)
-
+	for File1 in tqdm.tqdm(pdbfilelist):
+		for File2 in pdbfilelist:
+			if File1 == File2:
+				continue
+			else:
+				try:
+					#First structure
+					type1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File1) , aa_only = True)
+					length1 = type1[-1][-1].get_full_id()[3][1]
+					fixed = [atom['CA'] for atom in type1[0]]
+					#Second structure
+					type2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File2) , aa_only = True)
+					length2 = type2[-1][-1].get_full_id()[3][1]
+					moving = [atom['CA'] for atom in type2[0]]
+					#Choose the length of the smallest structure
+					lengths = [length1 , length2]
+					smallest = min(int(item) for item in lengths)
+					#Find RMSD
+					sup = Bio.PDB.Superimposer()
+					sup.set_atoms(fixed[:smallest] , moving[:smallest])
+					sup.apply(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File2)[0].get_atoms())
+					RMSD = round(sup.rms , 4)
+					print(File1 , File2 , RMSD)
+					#Delete similar structures
+					if RMSD < RMSDcutoff:
+						os.remove(File2)
+				except:
+					continue
 	os.chdir(current)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+def Sequence(directory , Cutoff):
+	''' Remove structures that have similar sequences, which means they most likely have similar structures '''
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + 'Measuring sequence similarity' + '\x1b[0m')
+	for File1 in tqdm.tqdm(pdbfilelist):
+			for File2 in pdbfilelist:
+				try:
+					if File1 == File2:
+						continue
+					else:
+						seq1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File1) , aa_only = True)[0].get_sequence()
+						seq2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File2) , aa_only = True)[0].get_sequence()
+						alignment = Bio.pairwise2.align.globalxx(seq1 , seq2)
+						total = alignment[0][4]
+						similarity = alignment[0][2]
+						percentage = (similarity * 100) / total
+						if percentage > Cutoff:
+							os.remove(File2)
+				except:
+					continue
+	os.chdir(current)
 
 def Rg(directory , RGcutoff):
 	''' Remove structures that are below the Raduis of Gyration's value '''
@@ -285,9 +293,9 @@ def Distances(directory):
 		dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
 		for aa in dssp:									#Identify final structure's length
 			length = aa[0]
-		structure = Bio.PDB.PDBParser(QUIET=True).get_structure('X' , TheFile)
+		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
 		ppb = Bio.PDB.Polypeptide.PPBuilder()
-		Type = ppb.build_peptides(structure , aa_only=True)
+		Type = ppb.build_peptides(structure , aa_only = True)
 		model = Type
 		chain = model[0]
 		distances = list()
@@ -304,14 +312,15 @@ def Distances(directory):
 		print(distances)
 	os.chdir(current)
 #---------------------------------------------------------------------------------------------------------------------------------------
-#Database('DATABASE' , 'PDBDatabase')			# 1. Download the PDB database
-#Extract('PDBDatabase')					# 2. Extract files
-#NonProtein('PDBDatabase')				# 3. Remove non-protein structures
-#Size('PDBDatabase' , 80 , 150)				# 4. Remove structures less than or larger than a specified amino acid leangth
-#Break('PDBDatabase')					# 5. Remove structure with broken chains
-#Loops('PDBDatabase' , 5)				# 6. Remove structures that have loops that are larger than a spesific length
-#Renumber('PDBDatabase')					# 7. Renumber structures starting at amino acid 1
-RMSD('PDBDatabase' , 0.5)				# 8. Measure RMSD of each structure to each structure, remove if RMSD < specified value
-#Rg('PDBDatabase' , 15)					# 9. Remove structures that are below a specified Raduis of Gyration value
-#SS('PDBDatabase')					# 10. Get the secondary structures
-#Distances('PDBDatabase')				# 11. Measure distances between the first amino acid and all the others
+Database('DATABASE' , 'PDBDatabase')			# 1. Download the PDB database
+Extract('PDBDatabase')					# 2. Extract files
+NonProtein('PDBDatabase')				# 3. Remove non-protein structures
+Size('PDBDatabase' , 80 , 150)				# 4. Remove structures less than or larger than a specified amino acid leangth
+Break('PDBDatabase')					# 5. Remove structure with broken chains
+Loops('PDBDatabase' , 10)				# 6. Remove structures that have loops that are larger than a spesific length
+Renumber('PDBDatabase')					# 7. Renumber structures starting at amino acid 1
+Sequence('PDBDatabase' , 75)				# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
+#RMSD('PDBDatabase' , 5)				# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
+Rg('PDBDatabase' , 15)					# 10. Remove structures that are below a specified Raduis of Gyration value
+SS('PDBDatabase')					# 11. Get the secondary structures
+Distances('PDBDatabase')				# 12. Measure distances between the first amino acid and all the others
