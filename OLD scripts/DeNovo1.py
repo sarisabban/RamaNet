@@ -255,31 +255,74 @@ def Fragments(pose):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
-def Draw(BPfile , CSTfile):
+def Draw(SecondaryStructureString , DistancesList):
 	''' Draws a protein topology given its secondary structure and distances '''
 	''' Generates the DeNovo.pdb file '''
-	#Generate a starting structure
-	temp = open('temp.pdb' , 'w')
-	temp.write('ATOM      1  N   VAL A  1       25.945   4.358  33.648  1.00 22.51           N  \nATOM      2  CA  VAL A  1       26.375   4.305  35.016  1.00 24.82           C  \nATOM      3  C   VAL A  1       27.860   4.146  35.064  1.00 17.93           C  \nATOM      4  O   VAL A  1       28.451   3.503  34.206  1.00 27.99           O  \nATOM      5  CB  VAL A  1       25.647   3.121  35.836  1.00 38.86           C  \nATOM      6  CG1 VAL A  1       24.936   2.161  34.876  1.00 40.73           C  \nATOM      7  CG2 VAL A  1       26.659   2.335  36.692  1.00 39.90           C  ')
-	temp.close()
-	pose = pose_from_pdb('temp.pdb')
-	#Run the BluePrintBDR mover
-	scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('ref2015_cst')
-	mover = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
-	mover.num_fragpick(200)
-	mover.use_fullmer(True)
-	mover.use_abego_bias(True)
-	mover.use_sequence_bias(False)
-	mover.max_linear_chainbreak(0.07)
-	mover.ss_from_blueprint(True)
-	mover.dump_pdb_when_fail('')
-	mover.set_constraints_NtoC(-1.0)
-	mover.set_blueprint(BPfile)
-	mover.set_constraint_file(CSTfile)
-	mover.scorefunction(scorefxn)
-	mover.apply(pose)
+	#Length of structure
+	length = len(SecondaryStructureString)
+	#Construct primary structure made of Valines
+	Val = str()
+	for itr in range(length):
+		itr = 'V'
+		Val = Val + itr
+	pose = pose_from_sequence(Val)
+	#Generate constraints file
+	ConstFile = open('constraints.cst' , 'w')
+	firstAA = 0
+	secndAA = length
+	for distance in DistancesList:
+		if firstAA == 0:
+			line = 'AtomPair CA ' + '1' + ' CA ' + str(secndAA) + ' GAUSSIANFUNC ' + str(distance) + ' 2.0\n'
+			ConstFile.write(line)
+			firstAA += 10
+			secndAA -= 10
+		else:
+			line = 'AtomPair CA ' + str(firstAA) + ' CA ' + str(secndAA) + ' GAUSSIANFUNC ' + str(distance) + ' 2.0\n'
+			ConstFile.write(line)
+			firstAA += 10
+			secndAA -= 10
+	ConstFile.close()
+	#Fold topology
+	for repeat in range(3):
+		#Apply torsion angles
+		count = 0
+		for resi in SecondaryStructureString:
+			count += 1
+			if resi == 'H':
+				pose.set_phi(int(count) , -57.8)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
+				pose.set_psi(int(count) , -47.0)	#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_5.html
+			elif resi == 'S':
+				pose.set_phi(int(count) , -120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
+				pose.set_psi(int(count) , 120)		#From http://www.cryst.bbk.ac.uk/PPS2/course/section8/ss-960531_10.html#HEADING9
+		#Add constraints option to pose
+		constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
+		constraints.constraint_file('constraints.cst')
+		constraints.add_constraints(True)
+		constraints.apply(pose)
+		#Score function with weight on only atom_pair_constraint
+		scorefxn = ScoreFunction()
+		scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.atom_pair_constraint , 	1.0)
+		#Constraint relax to bring atoms together
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		relax.constrain_relax_to_start_coords(True)
+		relax.constrain_coords(True)
+		relax.apply(pose)
+		#Normal FastRelax with constraints
+		scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('ref2015_cst')
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		relax.constrain_relax_to_start_coords(True)
+		relax.constrain_coords(True)
+		relax.apply(pose)
+		#Normal FastRelax without constraints
+		scorefxn = get_fa_scorefxn()
+		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		relax.set_scorefxn(scorefxn)
+		relax.apply(pose)
+	#Export
 	pose.dump_pdb('DeNovo.pdb')
-	os.remove('temp.pdb')
+#	os.remove('constraints.cst')
 
 
 
@@ -360,6 +403,7 @@ def GenSecStruct():
 			break
 	protein.append('L')
 	protein = ''.join(protein)
+
 	return(protein)
 
 
@@ -385,4 +429,8 @@ dist = ML('Data.csv')
 Draw(SS , dist)
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
-Draw('blueprint.bpf' , 'constraints.cst')
+SS = 'LLLHHHHHHHHHLLLLLLLLLHHHHHHHHHHHLLLLLLLLLLSSSSSLLLHHHHHHHHHLSSSLLLLLLLLSSSLLLLSSSSSSSSLLLLSLLSLLSSSSSSSSLSSSSSSLLLLSSSSSSSSL'
+dist = [46.2503 , 40.3013 , 25.9238 , 11.769 , 11.1069 , 16.1582 , 12.93 , 18.1924 , 14.2343 , 16.1879]
+#SS = 'LSSSSLLLLLLHHHHHHHHHHHHHHHHHHLSSSSSSLHHHHHHHHHHHHHHHHLSSSSSSLHHHLSSSSSSLLL' #87
+#dist = [1.0]
+Draw(SS , dist)
