@@ -312,6 +312,7 @@ def Distances(directory):
 		print(distances)
 	os.chdir(current)
 #---------------------------------------------------------------------------------------------------------------------------------------
+#Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
 Extract('PDBDatabase')					# 2. Extract files
 NonProtein('PDBDatabase')				# 3. Remove non-protein structures
@@ -322,5 +323,7 @@ Renumber('PDBDatabase')					# 7. Renumber structures starting at amino acid 1
 Sequence('PDBDatabase' , 75)			# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
 #RMSD('PDBDatabase' , 5)				# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
 Rg('PDBDatabase' , 15)					# 10. Remove structures that are below a specified Raduis of Gyration value
-SS('PDBDatabase')						# 11. Get the secondary structures
-Distances('PDBDatabase')				# 12. Measure distances between the first amino acid and all the others
+
+#Protocol to extract specific information from isolated structures
+#SS('PDBDatabase')						# 11. Get the secondary structures
+#Distances('PDBDatabase')				# 12. Measure distances between the first amino acid and all the others
