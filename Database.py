@@ -27,8 +27,8 @@ def Extract(directory):
 	print('\x1b[32m' + 'Extracting files' + '\x1b[0m')
 	for TheFile in tqdm.tqdm(pdbfilelist):
 		try:
-			TheName = TheFile.split('.')[0].split('pdb')[1].upper()				#Open file
-			InFile = gzip.open(TheFile, 'rt')						#Extract file
+			TheName = TheFile.split('.')[0].split('pdb')[1].upper()						#Open file
+			InFile = gzip.open(TheFile, 'rt')											#Extract file
 			structure = Bio.PDB.PDBParser(QUIET = True).get_structure(TheName , InFile)	#Separate chains and save to different files
 			count = 0
 			for chain in structure.get_chains():
@@ -50,7 +50,7 @@ def NonProtein(directory):
 		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
 		ppb = Bio.PDB.Polypeptide.PPBuilder()
 		Type = ppb.build_peptides(structure , aa_only = True)
-		if Type == []:										#Non-protein structures have Type = []
+		if Type == []:																	#Non-protein structures have Type = []
 			os.remove(TheFile)
 		else:
 			continue
@@ -68,7 +68,7 @@ def Size(directory , Size_From , Size_To):
 			structure = parser.get_structure('X' , TheFile)
 			model = structure[0]
 			dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
-			for aa in dssp:									#Identify final structure's length
+			for aa in dssp:																#Identify final structure's length
 				length = aa[0]
 			if length >= int(Size_To) or length <= int(Size_From):
 				os.remove(TheFile)
@@ -107,7 +107,7 @@ def Loops(directory , LoopLength):
 		SS = list()
 		for res in dssp:
 			ss = res[2]
-			if ss == '-' or ss == 'T' or ss == 'S':		#Loop (DSSP code is - or T or S)
+			if ss == '-' or ss == 'T' or ss == 'S':										#Loop (DSSP code is - or T or S)
 				SS.append('L')
 			else:
 				SS.append('.')
@@ -138,13 +138,13 @@ def Renumber(directory):
 		num = 0
 		AA2 = None
 		for line in pdb:
-			count += 1														#Sequencially number atoms
-			AA1 = line[23:27]													#Sequencially number residues
+			count += 1																	#Sequencially number atoms
+			AA1 = line[23:27]															#Sequencially number residues
 			if not AA1 == AA2:
 				num += 1			
 			final_line = line[:7] + '{:4d}'.format(count) + line[11:17] + line[17:21] + 'A' + '{:4d}'.format(num) + line[26:]	#Update each line to have its atoms and residues sequencially labeled, as well as being in chain A
 			AA2 = AA1
-			PDB.write(final_line)													#Write to new file called motif.pdb
+			PDB.write(final_line)														#Write to new file called motif.pdb
 		PDB.close()
 		os.remove(TheFile)
 		os.rename(TheFile + 'X' , TheFile)
@@ -270,11 +270,11 @@ def SS(directory):
 		SS = list()
 		for res in dssp:
 			ss = res[2]
-			if ss == '-' or ss == 'T' or ss == 'S':		#Loop (DSSP code is - or T or S)
+			if ss == '-' or ss == 'T' or ss == 'S':										#Loop (DSSP code is - or T or S)
 				SS.append('L')
-			elif ss == 'G' or ss == 'H' or ss == 'I':	#Helix (DSSP code is G or H or I)
+			elif ss == 'G' or ss == 'H' or ss == 'I':									#Helix (DSSP code is G or H or I)
 				SS.append('H')
-			elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
+			elif ss == 'B' or ss == 'E':												#Sheet (DSSP code is B or E)
 				SS.append('S')
 		print(SS)
 	os.chdir(current)
@@ -291,7 +291,7 @@ def Distances(directory):
 		structure = parser.get_structure('X' , TheFile)
 		model = structure[0]
 		dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
-		for aa in dssp:									#Identify final structure's length
+		for aa in dssp:																	#Identify final structure's length
 			length = aa[0]
 		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
 		ppb = Bio.PDB.Polypeptide.PPBuilder()
@@ -312,15 +312,15 @@ def Distances(directory):
 		print(distances)
 	os.chdir(current)
 #---------------------------------------------------------------------------------------------------------------------------------------
-Database('DATABASE' , 'PDBDatabase')			# 1. Download the PDB database
+Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
 Extract('PDBDatabase')					# 2. Extract files
 NonProtein('PDBDatabase')				# 3. Remove non-protein structures
-Size('PDBDatabase' , 80 , 150)				# 4. Remove structures less than or larger than a specified amino acid leangth
+Size('PDBDatabase' , 80 , 150)			# 4. Remove structures less than or larger than a specified amino acid leangth
 Break('PDBDatabase')					# 5. Remove structure with broken chains
 Loops('PDBDatabase' , 10)				# 6. Remove structures that have loops that are larger than a spesific length
 Renumber('PDBDatabase')					# 7. Renumber structures starting at amino acid 1
-Sequence('PDBDatabase' , 75)				# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
+Sequence('PDBDatabase' , 75)			# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
 #RMSD('PDBDatabase' , 5)				# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
 Rg('PDBDatabase' , 15)					# 10. Remove structures that are below a specified Raduis of Gyration value
-SS('PDBDatabase')					# 11. Get the secondary structures
+SS('PDBDatabase')						# 11. Get the secondary structures
 Distances('PDBDatabase')				# 12. Measure distances between the first amino acid and all the others
