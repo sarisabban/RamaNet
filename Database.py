@@ -325,5 +325,5 @@ Sequence('PDBDatabase' , 75)			# 8. Align the sequences of each structure to eac
 Rg('PDBDatabase' , 15)					# 10. Remove structures that are below a specified Raduis of Gyration value
 
 #Protocol to extract specific information from isolated structures
-#SS('PDBDatabase')						# 11. Get the secondary structures
-#Distances('PDBDatabase')				# 12. Measure distances between the first amino acid and all the others
+#SS('PDBDatabase')						# 1. Get the secondary structures
+#Distances('PDBDatabase')				# 2. Measure distances between the first amino acid and all the others
