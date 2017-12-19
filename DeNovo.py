@@ -320,7 +320,6 @@ def Draw(BPfile , CSTfile , RgCutoff):
 		rr = sum(mi * i + mj * j + mk * k for (i , j , k) , (mi , mj , mk) in zip(coord , xm))
 		mm = sum((sum(i) / tmass) ** 2 for i in zip( * xm))
 		rg = math.sqrt(rr / tmass - mm)
-		print(rg)
 		if rg <= RgCutoff:
 			#Evaluation - Loops
 			parser = Bio.PDB.PDBParser()
