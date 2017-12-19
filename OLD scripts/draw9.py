@@ -1,6 +1,6 @@
 import os , math , Bio.PDB ; from pyrosetta import * ; from pyrosetta.toolbox import * ; init()
 
-def Draw(BPfile , CSTfile , RgCutoff , LoopLengthCutoff):
+def Draw(BPfile , CSTfile , RgCutoff):
 	#Generate a starting structure
 	temp = open('temp.pdb' , 'w')
 	temp.write('ATOM      1  N   VAL A  1       25.945   4.358  33.648  1.00 22.51           N  \nATOM      2  CA  VAL A  1       26.375   4.305  35.016  1.00 24.82           C  \nATOM      3  C   VAL A  1       27.860   4.146  35.064  1.00 17.93           C  \nATOM      4  O   VAL A  1       28.451   3.503  34.206  1.00 27.99           O  \nATOM      5  CB  VAL A  1       25.647   3.121  35.836  1.00 38.86           C  \nATOM      6  CG1 VAL A  1       24.936   2.161  34.876  1.00 40.73           C  \nATOM      7  CG2 VAL A  1       26.659   2.335  36.692  1.00 39.90           C  ')
@@ -75,22 +75,18 @@ def Draw(BPfile , CSTfile , RgCutoff , LoopLengthCutoff):
 				ss = res[2]
 				if ss == '-' or ss == 'T' or ss == 'S':
 					SS.append('L')
-				else:
-					SS.append('.')
-			loops = ''.join(SS).split('.')
-			loops = [item for item in loops if item] 
-			LargeLoop = None
-			for item in loops:
-				if len(item) <= LoopLengthCutoff:
-					break
-				else:
-					LargeLoop = 'LargeLoop'
-			if LargeLoop == 'LargeLoop':
+				elif ss == 'G' or ss == 'H' or ss == 'I' or ss == 'B' or ss == 'E':
+					SS.append('NL')
+			loop = SS.count('L')
+			notloop = SS.count('NL')
+			if loop >= notloop:
 				os.remove('DeNovo.pdb')
 				continue
+			else:
+				break
 		else:
 			os.remove('DeNovo.pdb')
 			continue
 	os.remove('temp.pdb')
 
-Draw('blueprint.bpf' , 'constraints.cst' , 15 , 15)
+#Draw('blueprint.bpf' , 'constraints.cst' , 15)
