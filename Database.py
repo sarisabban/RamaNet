@@ -100,29 +100,32 @@ def Loops(directory , LoopLength):
 	os.chdir(directory)
 	print('\x1b[32m' + 'Removing structures with long loops' + '\x1b[0m')
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		parser = Bio.PDB.PDBParser()
-		structure = parser.get_structure('X' , TheFile)
-		model = structure[0]
-		dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
-		SS = list()
-		for res in dssp:
-			ss = res[2]
-			if ss == '-' or ss == 'T' or ss == 'S':										#Loop (DSSP code is - or T or S)
-				SS.append('L')
+		Try:
+			parser = Bio.PDB.PDBParser()
+			structure = parser.get_structure('X' , TheFile)
+			model = structure[0]
+			dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
+			SS = list()
+			for res in dssp:
+				ss = res[2]
+				if ss == '-' or ss == 'T' or ss == 'S':										#Loop (DSSP code is - or T or S)
+					SS.append('L')
+				else:
+					SS.append('.')
+			loops = ''.join(SS).split('.')
+			loops = [item for item in loops if item] 
+			LargeLoop = None
+			for item in loops:
+				if len(item) <= LoopLength:
+					continue
+				else:
+					LargeLoop = 'LargeLoop'
+			if LargeLoop == 'LargeLoop':
+				os.remove(TheFile)
 			else:
-				SS.append('.')
-		loops = ''.join(SS).split('.')
-		loops = [item for item in loops if item] 
-		LargeLoop = None
-		for item in loops:
-			if len(item) <= LoopLength:
 				continue
-			else:
-				LargeLoop = 'LargeLoop'
-		if LargeLoop == 'LargeLoop':
+		except:
 			os.remove(TheFile)
-		else:
-			continue
 	os.chdir(current)
 
 def Renumber(directory):
