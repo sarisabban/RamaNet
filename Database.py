@@ -100,7 +100,7 @@ def Loops(directory , LoopLength):
 	os.chdir(directory)
 	print('\x1b[32m' + 'Removing structures with long loops' + '\x1b[0m')
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		Try:
+		try:
 			parser = Bio.PDB.PDBParser()
 			structure = parser.get_structure('X' , TheFile)
 			model = structure[0]
@@ -265,6 +265,7 @@ def SS(directory):
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
 	print('\x1b[32m' + 'Getting the secondary structures of each protein' + '\x1b[0m')
+	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
 		parser = Bio.PDB.PDBParser()
 		structure = parser.get_structure('X' , TheFile)
@@ -279,8 +280,19 @@ def SS(directory):
 				SS.append('H')
 			elif ss == 'B' or ss == 'E':												#Sheet (DSSP code is B or E)
 				SS.append('S')
-		print(SS)
+		SS = ['1' if x == 'L' else x for x in SS]
+		SS = ['2' if x == 'H' else x for x in SS]
+		SS = ['3' if x == 'S' else x for x in SS]
+		addition = 150 - len(SS)
+		for zeros in range(addition):
+			SS.append('0')
+		line = ';'.join(SS)
+		data = open('SS' , 'a')
+		data.write(str(count) + ';' + TheFile.split('.')[0] + ';' + line + '\n')
+		data.close()
+		count += 1
 	os.chdir(current)
+	os.rename(directory + '/SS' , 'SS')
 
 def Distances(directory):
 	''' Measures distances between the first amino acid and all the others '''
@@ -301,32 +313,45 @@ def Distances(directory):
 		Type = ppb.build_peptides(structure , aa_only = True)
 		model = Type
 		chain = model[0]
+		positions = list(range(length // 10, length, length // 10))  
 		distances = list()
-		for res in range(length - 1):
+		for res in positions:
 			try:
 				residue1 = chain[0]
 				residue2 = chain[res + 1]
 				atom1 = residue1['CA']
 				atom2 = residue2['CA']
 				distance = atom1-atom2
-				distances.append(distance)
+				distances.append(str(distance))
 			except:
 				continue
-		print(distances)
+
+		line = ';'.join(distances)
+		data = open('DI' , 'a')
+		data.write(line + '\n')
+		data.close()
 	os.chdir(current)
+	os.rename(directory + '/DI' , 'DI')
+
+def PutTogether(SS , DI):
+	sec = open(SS , 'r')
+	dis = open(DI , 'r')
+
+
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
-Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
-Extract('PDBDatabase')					# 2. Extract files
-NonProtein('PDBDatabase')				# 3. Remove non-protein structures
-Size('PDBDatabase' , 80 , 150)			# 4. Remove structures less than or larger than a specified amino acid leangth
-Break('PDBDatabase')					# 5. Remove structure with broken chains
-Loops('PDBDatabase' , 10)				# 6. Remove structures that have loops that are larger than a spesific length
-Renumber('PDBDatabase')					# 7. Renumber structures starting at amino acid 1
-Sequence('PDBDatabase' , 75)			# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
-#RMSD('PDBDatabase' , 5)				# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
-Rg('PDBDatabase' , 15)					# 10. Remove structures that are below a specified Raduis of Gyration value
+#Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
+#Extract('PDBDatabase')			# 2. Extract files
+#NonProtein('PDBDatabase')		# 3. Remove non-protein structures
+#Size('PDBDatabase' , 80 , 150)		# 4. Remove structures less than or larger than a specified amino acid leangth
+#Break('PDBDatabase')			# 5. Remove structure with broken chains
+#Loops('PDBDatabase' , 10)		# 6. Remove structures that have loops that are larger than a spesific length
+#Renumber('PDBDatabase')		# 7. Renumber structures starting at amino acid 1
+#Sequence('PDBDatabase' , 75)		# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
+#RMSD('PDBDatabase' , 5)		# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
+#Rg('PDBDatabase' , 15)			# 10. Remove structures that are below a specified Raduis of Gyration value
 
 #Protocol to extract specific information from isolated structures
-#SS('PDBDatabase')						# 1. Get the secondary structures
-#Distances('PDBDatabase')				# 2. Measure distances between the first amino acid and all the others
+#SS('PDBDatabase')			# 1. Get the secondary structures
+#Distances('PDBDatabase')		# 2. Measure distances between the first amino acid and all the others
+PutTogether('SS' , 'DI')
