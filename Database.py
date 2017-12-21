@@ -349,18 +349,18 @@ def PutTogether(SS , DI):
 	os.remove('DI')
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
-#Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
-#Extract('PDBDatabase')			# 2. Extract files
-#NonProtein('PDBDatabase')		# 3. Remove non-protein structures
-#Size('PDBDatabase' , 80 , 150)		# 4. Remove structures less than or larger than a specified amino acid leangth
-#Break('PDBDatabase')			# 5. Remove structure with broken chains
-#Loops('PDBDatabase' , 10)		# 6. Remove structures that have loops that are larger than a spesific length
-#Renumber('PDBDatabase')		# 7. Renumber structures starting at amino acid 1
-#Sequence('PDBDatabase' , 75)		# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
+Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
+Extract('PDBDatabase')			# 2. Extract files
+NonProtein('PDBDatabase')		# 3. Remove non-protein structures
+Size('PDBDatabase' , 80 , 150)		# 4. Remove structures less than or larger than a specified amino acid leangth
+Break('PDBDatabase')			# 5. Remove structure with broken chains
+Loops('PDBDatabase' , 10)		# 6. Remove structures that have loops that are larger than a spesific length
+Renumber('PDBDatabase')			# 7. Renumber structures starting at amino acid 1
+#Sequence('PDBDatabase' , 75)		# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage (takes a VERY VERY long time - 2 years)
 #RMSD('PDBDatabase' , 5)		# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
-#Rg('PDBDatabase' , 15)			# 10. Remove structures that are below a specified Raduis of Gyration value
+Rg('PDBDatabase' , 15)			# 10. Remove structures that are below a specified Raduis of Gyration value
 
 #Protocol to extract specific information from isolated structures
-#SS('PDBDatabase')			# 1. Get the secondary structures
-#Distances('PDBDatabase')		# 2. Measure distances between the first amino acid and all the others
-#PutTogether('SS' , 'DI')		# 3. Put the secondary structure file and the distance file together into a dataset
+SS('PDBDatabase')			# 1. Get the secondary structures
+Distances('PDBDatabase')		# 2. Measure distances between the first amino acid and all the others
+PutTogether('SS' , 'DI')		# 3. Put the secondary structure file and the distance file together into a dataset
