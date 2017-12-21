@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os , re , time , datetime , random , requests , urllib.request , bs4 , Bio.PDB
+import os , re , time , datetime , random , requests , urllib.request , bs4 , math , Bio.PDB
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
@@ -435,7 +435,7 @@ def GenSecStruct():
 
 
 
-def ML(CSV_FILE):
+def GenDistances(dataset):
 	''' Takes the data.csv and learns the distances pattern given the secondary structure of each amino acid, this is to allow it to generate distances in an effort to fold a topology into a logical protein structure '''
 	''' Returns a list of the distances between spesific parts of the protein that can be used as constrains when drawing and folding the DeNovo protein's topology '''
 	pass
@@ -444,9 +444,9 @@ def ML(CSV_FILE):
 SASA(pose)
 Design(pose)
 Fragments(pose)
-SS = GenSecStruct()
-dist = ML('Data.csv')
-Draw(SS , dist)
+Draw('blueprint.bpf' , 'constraints.cst' , 15)
+GenSecStruct()
+GenDistances('Data.csv')
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
-Draw('blueprint.bpf' , 'constraints.cst' , 15)
+

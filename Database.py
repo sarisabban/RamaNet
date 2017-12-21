@@ -345,8 +345,8 @@ def PutTogether(SS , DI):
 		data = open('data.csv' , 'a')
 		data.write(ss + ';' + di + '\n')
 		data.close()
-#	os.remove('SS')
-#	os.remove('DI')
+	os.remove('SS')
+	os.remove('DI')
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 #Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
@@ -363,4 +363,4 @@ def PutTogether(SS , DI):
 #Protocol to extract specific information from isolated structures
 #SS('PDBDatabase')			# 1. Get the secondary structures
 #Distances('PDBDatabase')		# 2. Measure distances between the first amino acid and all the others
-PutTogether('SS' , 'DI')		# 3. Put the secondary structure file and the distance file together into a dataset
+#PutTogether('SS' , 'DI')		# 3. Put the secondary structure file and the distance file together into a dataset
