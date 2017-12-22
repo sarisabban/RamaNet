@@ -259,10 +259,7 @@ def Draw(BPfile , CSTfile , RgCutoff):
 	''' Draws a protein topology given its secondary structure and distance constraints '''
 	''' Generates the DeNovo.pdb file '''
 	#Generate a starting structure
-	temp = open('temp.pdb' , 'w')
-	temp.write('ATOM      1  N   VAL A  1       25.945   4.358  33.648  1.00 22.51           N  \nATOM      2  CA  VAL A  1       26.375   4.305  35.016  1.00 24.82           C  \nATOM      3  C   VAL A  1       27.860   4.146  35.064  1.00 17.93           C  \nATOM      4  O   VAL A  1       28.451   3.503  34.206  1.00 27.99           O  \nATOM      5  CB  VAL A  1       25.647   3.121  35.836  1.00 38.86           C  \nATOM      6  CG1 VAL A  1       24.936   2.161  34.876  1.00 40.73           C  \nATOM      7  CG2 VAL A  1       26.659   2.335  36.692  1.00 39.90           C  ')
-	temp.close()
-	pose = pose_from_pdb('temp.pdb')
+	pose = pose_from_sequence('V')
 	for iteration in range(100):
 		#Run the BluePrintBDR mover
 		scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('fldsgn_cen')
@@ -343,7 +340,6 @@ def Draw(BPfile , CSTfile , RgCutoff):
 		else:
 			os.remove('DeNovo.pdb')
 			continue
-	os.remove('temp.pdb')
 
 
 
