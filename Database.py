@@ -194,13 +194,14 @@ def Sequence(directory , Cutoff):
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
-	print('\x1b[32m' + 'Measuring sequence similarity' + '\x1b[0m')
+	print('\x1b[32m' + 'Measuring sequence similarity, round 1/2' + '\x1b[0m')
 	for File1 in tqdm.tqdm(pdbfilelist):
-			for File2 in pdbfilelist:
-				try:
-					if File1 == File2:
-						continue
-					else:
+		for File2 in pdbfilelist:
+			try:
+				if File1 == File2:
+					continue
+				else:
+					if File1.split('.')[0].split('_')[0] == File2.split('.')[0].split('_')[0]:
 						seq1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File1) , aa_only = True)[0].get_sequence()
 						seq2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File2) , aa_only = True)[0].get_sequence()
 						alignment = Bio.pairwise2.align.globalxx(seq1 , seq2)
@@ -209,9 +210,26 @@ def Sequence(directory , Cutoff):
 						percentage = (similarity * 100) / total
 						if percentage > Cutoff:
 							os.remove(File2)
-				except:
+			except:
+				continue
+	print('\x1b[32m' + 'Measuring sequence similarity, round 2/2' + '\x1b[0m')
+	for File1 in tqdm.tqdm(pdbfilelist):
+		for File2 in pdbfilelist:
+			try:
+				if File1 == File2:
 					continue
-	os.chdir(current)
+				else:
+					if File1.split('.')[0].split('_')[0][:3] == File2.split('.')[0].split('_')[0][:3]:
+						seq1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File1) , aa_only = True)[0].get_sequence()
+						seq2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('X' , File2) , aa_only = True)[0].get_sequence()
+						alignment = Bio.pairwise2.align.globalxx(seq1 , seq2)
+						total = alignment[0][4]
+						similarity = alignment[0][2]
+						percentage = (similarity * 100) / total
+						if percentage > Cutoff:
+							os.remove(File2)
+			except:
+				continue
 
 def Rg(directory , RGcutoff):
 	''' Remove structures that are below the Raduis of Gyration's value '''
@@ -267,30 +285,33 @@ def SS(directory):
 	print('\x1b[32m' + 'Getting the secondary structures of each protein' + '\x1b[0m')
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		parser = Bio.PDB.PDBParser()
-		structure = parser.get_structure('X' , TheFile)
-		model = structure[0]
-		dssp = Bio.PDB.DSSP(model , TheFile , acc_array='Wilke')
-		SS = list()
-		for res in dssp:
-			ss = res[2]
-			if ss == '-' or ss == 'T' or ss == 'S':										#Loop (DSSP code is - or T or S)
-				SS.append('L')
-			elif ss == 'G' or ss == 'H' or ss == 'I':									#Helix (DSSP code is G or H or I)
-				SS.append('H')
-			elif ss == 'B' or ss == 'E':												#Sheet (DSSP code is B or E)
-				SS.append('S')
-		SS = ['1' if x == 'L' else x for x in SS]
-		SS = ['2' if x == 'H' else x for x in SS]
-		SS = ['3' if x == 'S' else x for x in SS]
-		addition = 150 - len(SS)
-		for zeros in range(addition):
-			SS.append('0')
-		line = ';'.join(SS)
-		data = open('SS' , 'a')
-		data.write(str(count) + ';' + TheFile.split('.')[0] + ';' + line + '\n')
-		data.close()
-		count += 1
+		try:
+			parser = Bio.PDB.PDBParser()
+			structure = parser.get_structure('X' , TheFile)
+			model = structure[0]
+			dssp = Bio.PDB.DSSP(model , TheFile , acc_array='Wilke')
+			SS = list()
+			for res in dssp:
+				ss = res[2]
+				if ss == '-' or ss == 'T' or ss == 'S':										#Loop (DSSP code is - or T or S)
+					SS.append('L')
+				elif ss == 'G' or ss == 'H' or ss == 'I':									#Helix (DSSP code is G or H or I)
+					SS.append('H')
+				elif ss == 'B' or ss == 'E':												#Sheet (DSSP code is B or E)
+					SS.append('S')
+			SS = ['1' if x == 'L' else x for x in SS]
+			SS = ['2' if x == 'H' else x for x in SS]
+			SS = ['3' if x == 'S' else x for x in SS]
+			addition = 150 - len(SS)
+			for zeros in range(addition):
+				SS.append('0')
+			line = ';'.join(SS)
+			data = open('SS' , 'a')
+			data.write(str(count) + ';' + TheFile.split('.')[0] + ';' + line + '\n')
+			data.close()
+			count += 1
+		except:
+			continue
 	os.chdir(current)
 	os.rename(directory + '/SS' , 'SS')
 
@@ -302,34 +323,37 @@ def Distances(directory):
 	os.chdir(directory)
 	print('\x1b[32m' + 'Measuring distances' + '\x1b[0m')
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		parser = Bio.PDB.PDBParser()
-		structure = parser.get_structure('X' , TheFile)
-		model = structure[0]
-		dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
-		for aa in dssp:																	#Identify final structure's length
-			length = aa[0]
-		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
-		ppb = Bio.PDB.Polypeptide.PPBuilder()
-		Type = ppb.build_peptides(structure , aa_only = True)
-		model = Type
-		chain = model[0]
-		positions = list(range(length // 10, length, length // 10))  
-		distances = list()
-		for res in positions:
-			try:
-				residue1 = chain[0]
-				residue2 = chain[res + 1]
-				atom1 = residue1['CA']
-				atom2 = residue2['CA']
-				distance = atom1-atom2
-				distances.append(str(distance))
-			except:
-				continue
+		try:
+			parser = Bio.PDB.PDBParser()
+			structure = parser.get_structure('X' , TheFile)
+			model = structure[0]
+			dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
+			for aa in dssp:																	#Identify final structure's length
+				length = aa[0]
+			structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
+			ppb = Bio.PDB.Polypeptide.PPBuilder()
+			Type = ppb.build_peptides(structure , aa_only = True)
+			model = Type
+			chain = model[0]
+			positions = list(range(length // 10, length, length // 10))  
+			distances = list()
+			for res in positions:
+				try:
+					residue1 = chain[0]
+					residue2 = chain[res + 1]
+					atom1 = residue1['CA']
+					atom2 = residue2['CA']
+					distance = atom1-atom2
+					distances.append(str(distance))
+				except:
+					continue
 
-		line = ';'.join(distances)
-		data = open('DI' , 'a')
-		data.write(line + '\n')
-		data.close()
+			line = ';'.join(distances)
+			data = open('DI' , 'a')
+			data.write(line + '\n')
+			data.close()
+		except:
+			continue
 	os.chdir(current)
 	os.rename(directory + '/DI' , 'DI')
 
@@ -356,11 +380,11 @@ Size('PDBDatabase' , 80 , 150)		# 4. Remove structures less than or larger than 
 Break('PDBDatabase')			# 5. Remove structure with broken chains
 Loops('PDBDatabase' , 10)		# 6. Remove structures that have loops that are larger than a spesific length
 Renumber('PDBDatabase')			# 7. Renumber structures starting at amino acid 1
-#Sequence('PDBDatabase' , 75)		# 8. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage (takes a VERY VERY long time - 2 years)
-#RMSD('PDBDatabase' , 5)		# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
-Rg('PDBDatabase' , 15)			# 10. Remove structures that are below a specified Raduis of Gyration value
+#RMSD('PDBDatabase' , 5)		# 8. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
+Rg('PDBDatabase' , 15)			# 9. Remove structures that are below a specified Raduis of Gyration value
+Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
 
 #Protocol to extract specific information from isolated structures
-SS('PDBDatabase')			# 1. Get the secondary structures
-Distances('PDBDatabase')		# 2. Measure distances between the first amino acid and all the others
-PutTogether('SS' , 'DI')		# 3. Put the secondary structure file and the distance file together into a dataset
+SS('PDBDatabase')			# 11. Get the secondary structures
+Distances('PDBDatabase')		# 12. Measure distances between the first amino acid and all the others
+PutTogether('SS' , 'DI')		# 13. Put the secondary structure file and the distance file together into a dataset
