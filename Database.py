@@ -322,7 +322,10 @@ def Dataset(directory):
 					distances.append(str(distance))
 				except:
 					continue
-
+			if distances == []:
+				continue
+			elif len(distances) != 10:
+				continue
 			DIline = ';'.join(distances)
 			data = open('data.csv' , 'a')
 			data.write(str(count) + ';' + TheFile.split('.')[0] + ';' + SSline + ';' + DIline + '\n')
