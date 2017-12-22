@@ -276,28 +276,31 @@ def Rg(directory , RGcutoff):
 			continue
 	os.chdir(current)
 
-def SS(directory):
-	''' Get the secondary structures '''
-	''' Generates a list with each amino acid's secondary strucure for each protein in a directory '''
+def Dataset(directory):
+	''' Get the secondary structures and distances '''
+	''' Generates a the data.csv with each amino acid's secondary strucure and 10 distances between the first amino acid's CA atom and others for each protein in a directory '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
 	print('\x1b[32m' + 'Getting the secondary structures of each protein' + '\x1b[0m')
+	data = open('data.csv' , 'a')
+	data.write(';PDB_ID;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;96;97;98;99;100;101;102;103;104;105;106;107;108;109;110;111;112;113;114;115;116;117;118;119;120;121;122;123;124;125;126;127;128;129;130;131;132;133;134;135;136;137;138;139;140;141;142;143;144;145;146;147;148;149;150;Distance_1;Distance_2;Distance_3;Distance_4;Distance_5;Distance_6;Distance_7;Distance_8;Distance_9;Distance_10\n')
+	data.close()
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
 		try:
-			parser = Bio.PDB.PDBParser()
-			structure = parser.get_structure('X' , TheFile)
+			structure = Bio.PDB.PDBParser().get_structure('X' , TheFile)
 			model = structure[0]
-			dssp = Bio.PDB.DSSP(model , TheFile , acc_array='Wilke')
+			dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
+			length = [aa[0] for aa in dssp][-1]			#Identify final structure's length
 			SS = list()
 			for res in dssp:
 				ss = res[2]
-				if ss == '-' or ss == 'T' or ss == 'S':										#Loop (DSSP code is - or T or S)
+				if ss == '-' or ss == 'T' or ss == 'S':		#Loop (DSSP code is - or T or S)
 					SS.append('L')
-				elif ss == 'G' or ss == 'H' or ss == 'I':									#Helix (DSSP code is G or H or I)
+				elif ss == 'G' or ss == 'H' or ss == 'I':	#Helix (DSSP code is G or H or I)
 					SS.append('H')
-				elif ss == 'B' or ss == 'E':												#Sheet (DSSP code is B or E)
+				elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
 					SS.append('S')
 			SS = ['1' if x == 'L' else x for x in SS]
 			SS = ['2' if x == 'H' else x for x in SS]
@@ -305,42 +308,14 @@ def SS(directory):
 			addition = 150 - len(SS)
 			for zeros in range(addition):
 				SS.append('0')
-			line = ';'.join(SS)
-			data = open('SS' , 'a')
-			data.write(str(count) + ';' + TheFile.split('.')[0] + ';' + line + '\n')
-			data.close()
-			count += 1
-		except:
-			continue
-	os.chdir(current)
-	os.rename(directory + '/SS' , 'SS')
-
-def Distances(directory):
-	''' Measures distances between the first amino acid and all the others '''
-	''' Generates a list with the distances '''
-	current = os.getcwd()
-	pdbfilelist = os.listdir(directory)
-	os.chdir(directory)
-	print('\x1b[32m' + 'Measuring distances' + '\x1b[0m')
-	for TheFile in tqdm.tqdm(pdbfilelist):
-		try:
-			parser = Bio.PDB.PDBParser()
-			structure = parser.get_structure('X' , TheFile)
-			model = structure[0]
-			dssp = Bio.PDB.DSSP(model , TheFile , acc_array = 'Wilke')
-			for aa in dssp:																	#Identify final structure's length
-				length = aa[0]
-			structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
-			ppb = Bio.PDB.Polypeptide.PPBuilder()
-			Type = ppb.build_peptides(structure , aa_only = True)
-			model = Type
-			chain = model[0]
-			positions = list(range(length // 10, length, length // 10))  
+			SSline =  ';'.join(SS)
+			chain = Bio.PDB.Polypeptide.PPBuilder().build_peptides(structure , aa_only = True)[0]
+			positions = [(i+1)*(length//10) for i in range(10)]
 			distances = list()
 			for res in positions:
 				try:
 					residue1 = chain[0]
-					residue2 = chain[res + 1]
+					residue2 = chain[res - 1]
 					atom1 = residue1['CA']
 					atom2 = residue2['CA']
 					distance = atom1-atom2
@@ -348,29 +323,15 @@ def Distances(directory):
 				except:
 					continue
 
-			line = ';'.join(distances)
-			data = open('DI' , 'a')
-			data.write(line + '\n')
+			DIline = ';'.join(distances)
+			data = open('data.csv' , 'a')
+			data.write(str(count) + ';' + TheFile.split('.')[0] + ';' + SSline + ';' + DIline + '\n')
 			data.close()
+			count += 1
 		except:
 			continue
 	os.chdir(current)
-	os.rename(directory + '/DI' , 'DI')
-
-def PutTogether(SS , DI):
-	data = open('data.csv' , 'a')
-	data.write(';PDB_ID;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;96;97;98;99;100;101;102;103;104;105;106;107;108;109;110;111;112;113;114;115;116;117;118;119;120;121;122;123;124;125;126;127;128;129;130;131;132;133;134;135;136;137;138;139;140;141;142;143;144;145;146;147;148;149;150;Distance_1;Distance_2;Distance_3;Distance_4;Distance_5;Distance_6;Distance_7;Distance_8;Distance_9;Distance_10\n')
-	data.close()
-	sec = open(SS , 'r')
-	dis = open(DI , 'r')
-	for ss , di in zip(sec , dis):
-		ss = ss.strip()
-		di = di.strip()
-		data = open('data.csv' , 'a')
-		data.write(ss + ';' + di + '\n')
-		data.close()
-	os.remove('SS')
-	os.remove('DI')
+	os.rename(directory + '/data.csv' , 'data.csv')
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
@@ -385,6 +346,4 @@ Rg('PDBDatabase' , 15)			# 9. Remove structures that are below a specified Radui
 Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
 
 #Protocol to extract specific information from isolated structures
-SS('PDBDatabase')			# 11. Get the secondary structures
-Distances('PDBDatabase')		# 12. Measure distances between the first amino acid and all the others
-PutTogether('SS' , 'DI')		# 13. Put the secondary structure file and the distance file together into a dataset
+Dataset('PDBDatabase')			# 11. Get the secondary structures
