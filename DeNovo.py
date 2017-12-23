@@ -255,7 +255,7 @@ def Fragments(pose):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
-def Draw(BPfile , CSTfile , RgCutoff):
+def DrawRosetta(BPfile , CSTfile , RgCutoff):
 	''' Draws a protein topology given its secondary structure and distance constraints '''
 	''' Generates the DeNovo.pdb file '''
 	#Generate a starting structure
@@ -341,86 +341,31 @@ def Draw(BPfile , CSTfile , RgCutoff):
 			os.remove('DeNovo.pdb')
 			continue
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-def GenSecStruct():
-	''' Generates a random structure's secondary structures '''
-	''' Returns a string that has each amino acid's secondary structure '''
-	#The secondary structure ratios
-	Ratio_H_to_S_Number = [2 , 5]###########################################MUST STUDY THE RATIO OF HELIX TO STRAND TO LOOP ---> WHAT IS THE PATTERN???
-	Ratio_H_to_S_Size = [10 , 10]###########################################MUST STUDY THE RATIO OF HELIX TO STRAND TO LOOP ---> WHAT IS THE PATTERN???
-	#Generate Random protein size
-	size = random.randint(100 , 150)
-	helix_number = Ratio_H_to_S_Number[0]
-	helix_size = Ratio_H_to_S_Size[0]
-	strand_number = Ratio_H_to_S_Number[1]
-	strand_size = Ratio_H_to_S_Size[1]
-	#Generate helices
-	Helix = list()
-	for numb in range(helix_number):
-		Hsize = list()
-		for H in range(helix_size):
-			Hsize.append('H')
-		Ahelix = ''.join(Hsize)
-		Helix.append(Ahelix)
-	#Generate strands
-	Strand = list()
-	for numb in range(strand_number):
-		Ssize = list()
-		for S in range(strand_size):
-			Ssize.append('S')
-		Astrand = ''.join(Ssize)
-		Strand.append(Astrand)
-	#Generate loops
-	while True:
-		order = Helix + Strand
-		random.shuffle(order)
-		HandS_size = (helix_size * helix_number) + (strand_size * strand_number)
-		loop_number = len(order) - 1
-		loop_size = size - HandS_size - 2
-		Ls = list()
-		for numb in range(loop_size):
-			Ls.append('L')
-		for chunk in range(loop_number):
-			Ls.append('.')
-		random.shuffle(Ls)
-		Ls = ''.join(Ls)
-		Loop = Ls.split('.')
-		decision = None
-		for check in Loop:
-			if len(check) < 3:
-				decision = 'Bad'
-				break
-			else:
-				decision = 'Good'
-		if decision == 'Good':
-			break
-		else:
+def DrawPDB(line):
+	''' Draws a protein topology given the CA atom's XYZ coordinates of each residue '''
+	''' Generates the DeNovo.pdb file '''
+	line = line.split(';')
+	items = int((len(line) - 2) / 3)
+	count_x = 2
+	count_y = 3
+	count_z = 4
+	ResCount = 1
+	AtoCount = 1
+	for coordinates in range(items):
+		x = line[count_x]
+		y = line[count_y]
+		z = line[count_z]
+		if x == '0' and y == '0' and z == '0':
 			continue
-	#Put together
-	protein = ['L']
-	count = 0
-	while True:
-		try:
-			protein.append(order[count])
-			protein.append(Loop[count])
-			count += 1
-		except:
-			break
-	protein.append('L')
-	protein = ''.join(protein)
-	return(protein)
+		TheLine = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'CA' , '' , 'VAL' , 'A' , ResCount , '' , x , y , z , 1.0 , 0.0 , 'C' , '') + '\n'
+		output = open('DeNovo.pdb' , 'a')
+		output.write(TheLine)
+		output.close()
+		count_x += 3
+		count_y += 3
+		count_z += 3
+		AtoCount += 1
+		ResCount += 1
 
 
 
@@ -431,18 +376,18 @@ def GenSecStruct():
 
 
 
-def GenDistances(dataset):
-	''' Takes the data.csv and learns the distances pattern given the secondary structure of each amino acid, this is to allow it to generate distances in an effort to fold a topology into a logical protein structure '''
-	''' Returns a list of the distances between spesific parts of the protein that can be used as constrains when drawing and folding the DeNovo protein's topology '''
+
+def ML():
 	pass
+
 #--------------------------------------------------------------------------------------------------------------------------------------
 '''
 SASA(pose)
 Design(pose)
 Fragments(pose)
-Draw('blueprint.bpf' , 'constraints.cst' , 15)
-GenSecStruct()
-GenDistances('Data.csv')
+DrawRosetta('blueprint.bpf' , 'constraints.cst' , 15)
+DrawPDB(line)
+ML()
 '''
 #--------------------------------------------------------------------------------------------------------------------------------------
 
