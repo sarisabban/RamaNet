@@ -366,28 +366,10 @@ def DrawPDB(line):
 		count_z += 3
 		AtoCount += 1
 		ResCount += 1
-
-
-
-
-
-
-
-
-
-
-
-def ML():
-	pass
-
 #--------------------------------------------------------------------------------------------------------------------------------------
-'''
-SASA(pose)
-Design(pose)
-Fragments(pose)
 DrawRosetta('blueprint.bpf' , 'constraints.cst' , 15)
-DrawPDB(line)
-ML()
-'''
-#--------------------------------------------------------------------------------------------------------------------------------------
-
+#DrawPDB(line)
+pose = pose_from_pdb('DeNovo.pdb')
+Design(pose)
+pose = pose_from_pdb('structure.pdb')
+Fragments(pose)
