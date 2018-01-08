@@ -258,9 +258,9 @@ def Fragments(pose):
 def DrawRosetta(BPfile , CSTfile , RgCutoff):
 	''' Draws a protein topology given its secondary structure and distance constraints '''
 	''' Generates the DeNovo.pdb file '''
-	#Generate a starting structure
-	pose = pose_from_sequence('V')
 	for iteration in range(100):
+		#Generate a starting structure
+		pose = pose_from_sequence('V')
 		#Run the BluePrintBDR mover
 		scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('fldsgn_cen')
 		scorefxn.set_weight(rosetta.core.scoring.atom_pair_constraint , 1.0)
