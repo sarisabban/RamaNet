@@ -346,9 +346,9 @@ def DrawPDB(line):
 	''' Generates the DeNovo.pdb file '''
 	line = line.split(';')
 	items = int((len(line) - 2) / 3)
-	count_x = 2
-	count_y = 3
-	count_z = 4
+	count_x = 0
+	count_y = 1
+	count_z = 2
 	ResCount = 1
 	AtoCount = 1
 	for coordinates in range(items):
