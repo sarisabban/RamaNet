@@ -2,7 +2,7 @@ import os
 
 def DrawPDB(line):
 	''' Draws a protein topology given the CA atom's XYZ coordinates of each residue '''
-	''' Generates the DeNovo.pdb file '''
+	''' Generates the DeNovo1.pdb file '''
 	line = line.split(';')
 	items = int((len(line) - 2) / 3)
 	count_x = 0
@@ -17,7 +17,7 @@ def DrawPDB(line):
 		if x == '0' and y == '0' and z == '0':
 			continue
 		TheLine = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'CA' , '' , 'GLY' , 'A' , ResCount , '' , x , y , z , 1.0 , 0.0 , 'C' , '') + '\n'
-		output = open('DeNovo.pdb' , 'a')
+		output = open('DeNovo1.pdb' , 'a')
 		output.write(TheLine)
 		output.close()
 		count_x += 3
@@ -27,6 +27,9 @@ def DrawPDB(line):
 		ResCount += 1
 
 def ConstructPDB(filename):
+	''' Uses the CA atom's XYZ coordinates of each residue to construct the atoms of a Glycine amino acid '''
+	''' Generates the DeNovo2.pdb file '''
+
 	data = open(filename , 'r')
 	ResCount = 1
 	AtoCount = 1
@@ -106,6 +109,8 @@ def ConstructPDB(filename):
 			tag = '+'
 
 def RotatePDB(filename):
+	''' Rotates each Glycine amino acid until they touch and form a chain '''
+	''' Generates the DeNovo3.pdb file '''
 	data = open(filename , 'r')
 
 
@@ -118,13 +123,14 @@ def RotatePDB(filename):
 line =  '1.408;31.978;-3.772;0.217;30.077;-0.712;3.487;28.223;-0.125'
 
 DrawPDB(line)
-#os.system('pymol DeNovo.pdb')
+#os.system('pymol DeNovo1.pdb')
 
-ConstructPDB('DeNovo.pdb')
+ConstructPDB('DeNovo1.pdb')
 #os.system('pymol DeNovo2.pdb')
 
 RotatePDB('DeNovo2.pdb')
 #os.system('pymol DeNovo3.pdb')
 
-os.system('rm DeNovo.pdb')
+os.system('rm DeNovo1.pdb')
 os.system('rm DeNovo2.pdb')
+#os.system('rm DeNovo3.pdb')
