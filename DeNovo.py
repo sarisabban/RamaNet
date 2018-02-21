@@ -77,8 +77,8 @@ def Design(pose):
 	''' Applies FastDesign to change the whole structure's amino acids (one layer at a time as well as designing towards an optimally packed core) while maintaining the same backbone. Should be faster than the Whole method and results in a better final structure than the Layer method '''
 	''' Generates the Designed.pdb file '''
 	#A - Relax original structure
-	score1_original_before_relax = scorefxn(pose)					#Measure score before relaxing
 	scorefxn = get_fa_scorefxn()
+	score1_original_before_relax = scorefxn(pose)					#Measure score before relaxing
 	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
 	relax.set_scorefxn(scorefxn)
 	relax.apply(pose)
