@@ -1,5 +1,71 @@
 import os , numpy
 
+def DrawPDB(filename):
+	''' Draws a protein topology given only the CA atom's XYZ coordinates of each residue '''
+	''' Generates the DeNovo1.pdb file '''
+	data = open(filename , 'r')
+	coo = [float(x) for x in data.read().split(';')]
+	x = 0
+	y = 1
+	z = 2
+	for xyz in range(int(len(coo) / 3)):
+		try:
+			# Identify the coordinates of one CA atom and its next CA atom
+			CA1 = [coo[x] , coo[y] , coo[z]]
+			CA2 = [coo[x + 3] , coo[y + 3] , coo[z + 3]]
+			# Array for Rotation Matrix
+			RCA = numpy.array([CA1[0] , CA1[1]])
+			LCA = numpy.array([CA2[0] , CA2[1]])
+			angle = numpy.radians(12.7)
+				# The C atom
+			# Rotation Matrix for 45 degrees (= pi/4)
+			r = numpy.array([[numpy.cos(angle) , - numpy.sin(angle)] , [numpy.sin(angle) , numpy.cos(angle)]])
+			# Create a vector at position x = 1, y = 0, for example
+			v = LCA - RCA
+			# Rotated vector (45 degrees counter-clockwise): x = y = sqrt(2)/2
+			u = r @ v
+			scaled_u = (2.4 / 3.8) * u
+			redtop = RCA + scaled_u
+			C = [round(redtop[0] , 3) , round(redtop[1] , 3) , round(CA1[2] - CA2[2] , 3)]
+				# The N atom
+			# Rotation Matrix for 45 degrees (= pi/4)
+			r = numpy.array([[numpy.cos(angle) , - numpy.sin(angle)] , [numpy.sin(angle) , numpy.cos(angle)]])
+			# Create a vector at position x = 1, y = 0, for example
+			v = RCA - LCA
+			# Rotated vector (45 degrees counter-clockwise): x = y = sqrt(2)/2
+			u = r @ v
+			scaled_u = (2.4 / 3.8) * u
+			redtop = LCA + scaled_u
+			N = [round(redtop[0] , 3) , round(redtop[1] , 3) , round(CA1[2] + CA2[2] - C[2] , 3)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+			print(CA1 , C , N)
+			x += 3
+			y += 3
+			z += 3
+		except:
+			break
+DrawPDB('1.txt')
+
+
+
+
+
+
+"""
 def DrawPDB(line):
 	''' Draws a protein topology given the CA atom's XYZ coordinates of each residue '''
 	''' Generates the DeNovo1.pdb file '''
@@ -153,3 +219,4 @@ RotatePDB(line)
 #os.system('rm DeNovo1.pdb')
 #os.system('rm DeNovo2.pdb')
 #os.system('rm DeNovo3.pdb')
+"""
