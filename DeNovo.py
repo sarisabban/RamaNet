@@ -258,6 +258,7 @@ def Fragments(pose):
 def DrawRosetta(BPfile , CSTfile , RgCutoff):
 	''' Draws a protein topology given its secondary structure and distance constraints '''
 	''' Generates the DeNovo.pdb file '''
+	''' This function got replaced with the DrawPDB() function that proved to be more reliable '''
 	for iteration in range(100):
 		#Generate a starting structure
 		pose = pose_from_sequence('V')
@@ -342,33 +343,10 @@ def DrawRosetta(BPfile , CSTfile , RgCutoff):
 			continue
 
 def DrawPDB(line):
-	''' Draws a protein topology given the CA atom's XYZ coordinates of each residue '''
-	''' Generates the DeNovo.pdb file '''
-	line = line.split(';')
-	items = int((len(line) - 2) / 3)
-	count_x = 0
-	count_y = 1
-	count_z = 2
-	ResCount = 1
-	AtoCount = 1
-	for coordinates in range(items):
-		x = line[count_x]
-		y = line[count_y]
-		z = line[count_z]
-		if x == '0' and y == '0' and z == '0':
-			continue
-		TheLine = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'CA' , '' , 'VAL' , 'A' , ResCount , '' , x , y , z , 1.0 , 0.0 , 'C' , '') + '\n'
-		output = open('DeNovo.pdb' , 'a')
-		output.write(TheLine)
-		output.close()
-		count_x += 3
-		count_y += 3
-		count_z += 3
-		AtoCount += 1
-		ResCount += 1
+	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
-DrawRosetta('blueprint.bpf' , 'constraints.cst' , 15)
-#DrawPDB(line)
+#DrawRosetta('blueprint.bpf' , 'constraints.cst' , 15)
+DrawPDB(line)
 pose = pose_from_pdb('DeNovo.pdb')
 Design(pose)
 pose = pose_from_pdb('structure.pdb')
