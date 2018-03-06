@@ -677,7 +677,7 @@ def DrawPDB(line):
 	mover.generate_constraints(pose)
 	mover.apply(pose)
 	#Call a score function that uses cartesian constraint weights
-	scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('talaris2013_cart')
+	scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('ref2015_cart')
 	scorefxn.set_weight(rosetta.core.scoring.coordinate_constraint , 1.0)
 	#FastRelax the structure
 	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
