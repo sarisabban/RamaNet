@@ -255,97 +255,9 @@ def Fragments(pose):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
-def DrawRosetta(BPfile , CSTfile , RgCutoff):
-	''' Draws a protein topology given its secondary structure and distance constraints '''
-	''' Generates the DeNovo.pdb file '''
-	''' This function got replaced with the DrawPDB() function that proved to be more reliable '''
-	for iteration in range(100):
-		#Generate a starting structure
-		pose = pose_from_sequence('V')
-		#Run the BluePrintBDR mover
-		scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('fldsgn_cen')
-		scorefxn.set_weight(rosetta.core.scoring.atom_pair_constraint , 1.0)
-		mover = pyrosetta.rosetta.protocols.fldsgn.BluePrintBDR()
-		mover.num_fragpick(200)
-		mover.use_fullmer(True)
-		mover.use_abego_bias(True)
-		mover.use_sequence_bias(False)
-		mover.max_linear_chainbreak(0.07)
-		mover.ss_from_blueprint(True)
-		mover.dump_pdb_when_fail('')
-		mover.set_constraints_NtoC(-1.0)
-		mover.set_blueprint(BPfile)
-		mover.set_constraint_file(CSTfile)
-		mover.scorefunction(scorefxn)
-		mover.apply(pose)
-		#Relax Structure
-		scorefxn = get_fa_scorefxn()
-		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-		relax.set_scorefxn(scorefxn)
-		relax.apply(pose)
-		pose.dump_pdb('DeNovo.pdb')
-		#Evaluation - Rg
-		mass = list()
-		Structure = open('DeNovo.pdb' , 'r')
-		for line in Structure:
-			line = line.split()
-			try:
-				if line[0] != 'ATOM':
-					continue
-				else:
-					if line[-1] == 'C':
-						mass.append(12.0107)
-					elif line[-1] == 'O':
-						mass.append(15.9994)
-					elif line[-1] == 'N':
-						mass.append(14.0067)
-					elif line[-1] == 'H':
-						mass.append(1.00794)
-					else:
-						continue
-			except:
-				continue
-		coord = list()
-		p = Bio.PDB.PDBParser()
-		structure = p.get_structure('X', 'DeNovo.pdb')
-		for model in structure:
-			for chain in model:
-				for residue in chain:
-					for atom in residue:
-						coord.append(atom.get_coord())
-		xm = [(m * i , m * j , m * k) for (i , j , k) , m in zip(coord , mass)]
-		tmass = sum(mass)
-		rr = sum(mi * i + mj * j + mk * k for (i , j , k) , (mi , mj , mk) in zip(coord , xm))
-		mm = sum((sum(i) / tmass) ** 2 for i in zip( * xm))
-		rg = math.sqrt(rr / tmass - mm)
-		if rg <= RgCutoff:
-			#Evaluation - Loops
-			parser = Bio.PDB.PDBParser()
-			structure = parser.get_structure('X' , 'DeNovo.pdb')
-			model = structure[0]
-			dssp = Bio.PDB.DSSP(model , 'DeNovo.pdb' , acc_array = 'Wilke')
-			SS = list()
-			for res in dssp:
-				ss = res[2]
-				if ss == '-' or ss == 'T' or ss == 'S':
-					SS.append('L')
-				elif ss == 'G' or ss == 'H' or ss == 'I' or ss == 'B' or ss == 'E':
-					SS.append('NL')
-			loop = SS.count('L')
-			notloop = SS.count('NL')
-			if loop >= notloop:
-				os.remove('DeNovo.pdb')
-				continue
-			else:
-				break
-		else:
-			os.remove('DeNovo.pdb')
-			continue
-
 def DrawPDB(line):
 	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
-#DrawRosetta('blueprint.bpf' , 'constraints.cst' , 15)
 DrawPDB(line)
 pose = pose_from_pdb('DeNovo.pdb')
 Design(pose)
