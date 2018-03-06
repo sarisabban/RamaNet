@@ -12,9 +12,6 @@ mover.apply(pose)
 
 scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('talaris2013_cart')
 scorefxn.set_weight(rosetta.core.scoring.coordinate_constraint , 1.0)
-
-#cart_bonded energy term to the scorefunction in question, as well as remove the pro_close term (to avoid double counting). 
-
 #scorefxn.set_weight(rosetta.core.scoring.cart_bonded_angle , 1.0)
 #scorefxn.set_weight(rosetta.core.scoring.cart_bonded_improper , 1.0)
 #scorefxn.set_weight(rosetta.core.scoring.cart_bonded_length , 1.0)

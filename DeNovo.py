@@ -73,9 +73,10 @@ def SASA(pose):
 	os.remove('ToDesign.pdb')										#Keep working directory clean
 	return(surface , boundery , core)								#Return values [0] = Motif_From [1] = Motif_To
 
-def Design(pose):
+def Design(Pose):
 	''' Applies FastDesign to change the whole structure's amino acids (one layer at a time as well as designing towards an optimally packed core) while maintaining the same backbone. Should be faster than the Whole method and results in a better final structure than the Layer method '''
 	''' Generates the Designed.pdb file '''
+	pose = pose_from_pdb(Pose)
 	#A - Relax original structure
 	scorefxn = get_fa_scorefxn()
 	score1_original_before_relax = scorefxn(pose)					#Measure score before relaxing
@@ -132,10 +133,11 @@ def Design(pose):
 	print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
 	print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
 
-def Fragments(pose):
+def Fragments(Pose):
 	''' Submits the pose to the Robetta server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation. Then measures the RMSD for each fragment at each position and chooses the lowest RMSD. Then averages out the lowest RMSDs. Then plots the lowest RMSD fragment for each positon '''
 	''' Generates the 3-mer file, the 9-mer file, the PsiPred file, the RMSD vs Position PDF plot with the averaged fragment RMSD printed in the plot '''
 	#Make the 3-mer and 9-mer fragment files and the PSIPRED file using the Robetta server
+	pose = pose_from_pdb(Pose)
 	sequence = pose.sequence()
 	#Post
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
@@ -256,10 +258,436 @@ def Fragments(pose):
 	return(Average_RMSD)
 
 def DrawPDB(line):
-	pass
+	''' Draws a protein topology in Glycine given each residue's only CA atom's XYZ coordinates '''
+	''' Generates the Backbone.pdb file '''
+	#Import the coordinates
+	line = line.split(';')
+	AAs = int((len(line)) / 3)
+	count_x = 0
+	count_y = 1
+	count_z = 2
+	ResCount = 1
+	AtoCount = 1
+	tag = '+'
+	ax = plt.figure().add_subplot(111 , projection = '3d')
+	for coordinates in range(AAs):
+		if tag == '+':
+			Ox = round(float(line[count_x]) , 3)
+			Oy = round(float(line[count_y]) , 3)
+			Oz = round(float(line[count_z]) , 3)
+			if Ox == '0' and Oy == '0' and Oz == '0':
+				continue
+			count_x += 3
+			count_y += 3
+			count_z += 3
+			AtoCount += 1
+			try:
+				Px = round(float(line[count_x]) , 3)
+				Py = round(float(line[count_y]) , 3)
+				Pz = round(float(line[count_z]) , 3)
+			except:
+				pass
+			#Initial and Terminus coordinates
+			O = numpy.array([Ox , Oy , Oz])
+			P = numpy.array([Px , Py , Pz])
+			ax.plot([O[0] , P[0]] , [O[1] , P[1]] , [O[2] , P[2]] , marker = 'o')
+			Mag = numpy.sqrt(((P[0] - O[0])**2) + ((P[1] - O[1])**2) + ((P[2] - O[2])**2))			#Magnitude = 3.8
+			Com = [P[0] - O[0] , P[1] - O[1] , P[2] - O[2]]
+			#The Carbon atom
+			#1 - Move To Axis (0 , 0 , 0)
+			Cori = P - O
+			MagCori = numpy.sqrt(((Cori[0])**2) + ((Cori[1])**2) + ((Cori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Cori[0]] , [0 , Cori[1]] , [0 , Cori[2]] , marker = 'o')
+			#2 - Define Rotation Matrix
+			A = numpy.radians(00.0)	#Phi 	Angle
+			B = numpy.radians(20.5)	#Theta	Angle
+			Y = numpy.radians(00.0)	#Psi	Angle
+			#2D Rotation Matrix - works best because the peptide bond is on a plane anyway, so there is no change in the Z axis.
+			CR = [	[numpy.cos(B)	,	-numpy.sin(B)	,	0] , 
+				[numpy.sin(B)	, 	 numpy.cos(B)	,	0] ,
+				[	0	,		0	,	1]]
+			"""
+			#XYX steps Tait-Bryan angles
+			CR = [	[numpy.cos(B)			,	numpy.sin(B)*numpy.sin(Y)						,	numpy.sin(B)*numpy.cos(Y)					] , 
+				[numpy.sin(B) *numpy.sin(A)	, 	numpy.cos(Y)*numpy.cos(A)-numpy.cos(B)*numpy.sin(Y)*numpy.sin(A)	,	numpy.cos(A)*numpy.sin(Y)-numpy.cos(B)*numpy.cos(Y)*numpy.sin(A)] ,
+				[-numpy.sin(B)*numpy.cos(A)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(A)*numpy.cos(Y)	,	numpy.sin(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(Y)*numpy.cos(A)]]
+			#XYZ steps Tait-Bryan angles
+			CR = [	[numpy.cos(B)*numpy.cos(Y)						,	-numpy.cos(Y)*numpy.sin(B)						,	numpy.sin(B)			] , 
+				[numpy.cos(A)*numpy.sin(Y)+numpy.cos(Y)*numpy.sin(A)*numpy.sin(B)	, 	numpy.cos(A)*numpy.cos(Y)-numpy.sin(A)*numpy.sin(B)*numpy.sin(Y)	,	-numpy.cos(B)*numpy.sin(A)	] ,
+				[numpy.sin(A)*numpy.sin(Y)-numpy.cos(A)*numpy.cos(Y)*numpy.sin(B)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(A)*numpy.sin(B)*numpy.sin(Y)	,	numpy.cos(A)*numpy.cos(B)	]]
+			"""
+			#3 - Rotate Matrix on XY axis, keeping Z unchanged
+			Crot = numpy.dot(CR , Cori)
+			MagCrot = numpy.sqrt(((Cori[0])**2) + ((Cori[1])**2) + ((Cori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Crot[0]] , [0 , Crot[1]] , [0 , Crot[2]] , marker = 'o')
+			#4 - Move rotated vector back to original start point
+			Cback = Crot + O
+			MagCback = numpy.sqrt(((Cback[0] - O[0])**2) + ((Cback[1] - O[1])**2) + ((Cback[2] - O[2])**2))	#Magnitude = 3.8
+			#ax.plot([O[0] , Cback[0]] , [O[1] , Cback[1]] , [O[2] , Cback[2]] , marker = 'o')
+			#5 - Scale vector to new magnitude
+			CBack = numpy.array([Cback[0] - O[0] , Cback[1] - O[1] , Cback[2] - O[2]])			#Get components of the vector after it was returned to its original starting point "back"
+			CScaled = (1.5 / 3.8) * CBack									#Multiply by (distance to final C position / distance between the 2 CA atoms) the scaling factor, this gives the value each axis needs to move by to each coordinates that result in the new scaled magnitude
+			C = numpy.add(O , CScaled)									#Add scaled components to the initial coordinates to get new terminus coordinates (the final coordintes of the C atom)
+			ComC = [C[0] - O[0] , C[1] - O[1] , C[2] - O[2]]
+			MagC = numpy.sqrt(((C[0] - O[0])**2) + ((C[1] - O[1])**2) + ((C[2] - O[2])**2))			#Magnitude = 1.5
+			ax.plot([O[0] , C[0]] , [O[1] , C[1]] , [O[2] , C[2]] , marker = 'o')
+			#6- Confirm angle between vectors
+			#angleC = numpy.degrees(numpy.arccos((numpy.dot(ComC , Com)) / (MagC * Mag)))			#Angle of rotation (is != 20.5 because it is calculated with the Z axis giving instead 12.08, but in 2D space the code will give 20.5) - This is commented out because it results in a RuntimeWarning through NumPy, basically the value is very very small is gets rounded up to 0 making the division impposible, it is not a math problem rather more a NumPy problem since it has low resolution
+			#The Nitrogen atom
+			#1 - Move To Axis (0 , 0 , 0)
+			Nori = P - O
+			MagNori = numpy.sqrt(((Nori[0])**2) + ((Nori[1])**2) + ((Nori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Nori[0]] , [0 , Nori[1]] , [0 , Nori[2]] , marker = 'o')
+			#2 - Define Rotation Matrix
+			AA = numpy.radians(00.0)	#Phi 	Angle
+			BB = numpy.radians(351.0)	#Theta	Angle
+			YY = numpy.radians(00.0)	#Psi	Angle
+			#2D Rotation Matrix - works best because the peptide bond is on a plane anyway, so there is no change in the Z axis.
+			NR = [	[numpy.cos(BB)	,	-numpy.sin(BB)	,	0] , 
+				[numpy.sin(BB)	, 	 numpy.cos(BB)	,	0] ,
+				[	0	,		0	,	1]]
+			"""
+			#XYX steps Tait-Bryan angles
+			NR = [	[numpy.cos(BB)			,	numpy.sin(BB)*numpy.sin(YY)						,	numpy.sin(BB)*numpy.cos(YY)						] , 
+				[numpy.sin(BB) *numpy.sin(AA)	, 	numpy.cos(YY)*numpy.cos(AA)-numpy.cos(BB)*numpy.sin(YY)*numpy.sin(AA)	,	numpy.cos(AA)*numpy.sin(YY)-numpy.cos(BB)*numpy.cos(YY)*numpy.sin(AA)	] ,
+				[-numpy.sin(BB)*numpy.cos(AA)	,	numpy.cos(YY)*numpy.sin(AA)+numpy.cos(BB)*numpy.cos(AA)*numpy.cos(YY)	,	numpy.sin(YY)*numpy.sin(AA)+numpy.cos(BB)*numpy.cos(YY)*numpy.cos(AA)	]]
+			#XYZ steps Tait-Bryan angles
+			NR = [	[numpy.cos(BB)*numpy.cos(YY)						,	-numpy.cos(YY)*numpy.sin(BB)						,	numpy.sin(BB)			] , 
+				[numpy.cos(AA)*numpy.sin(YY)+numpy.cos(YY)*numpy.sin(AA)*numpy.sin(BB)	, 	numpy.cos(AA)*numpy.cos(YY)-numpy.sin(AA)*numpy.sin(BB)*numpy.sin(YY)	,	-numpy.cos(BB)*numpy.sin(AA)	] ,
+				[numpy.sin(AA)*numpy.sin(YY)-numpy.cos(AA)*numpy.cos(YY)*numpy.sin(BB)	,	numpy.cos(YY)*numpy.sin(AA)+numpy.cos(AA)*numpy.sin(BB)*numpy.sin(YY)	,	numpy.cos(AA)*numpy.cos(BB)	]]
+			"""
+			#3 - Rotate Matrix on XY axis, keeping Z unchanged
+			Nrot = numpy.dot(NR , Nori)
+			MagNrot = numpy.sqrt(((Nori[0])**2) + ((Nori[1])**2) + ((Nori[2])**2))					#Magnitude = 3.8
+			#ax.plot([0 , Nrot[0]] , [0 , Nrot[1]] , [0 , Nrot[2]] , marker = 'o')
+			#4 - Move rotated vector back to original start point
+			Nback = Nrot + O
+			MagNback = numpy.sqrt(((Nback[0] - O[0])**2) + ((Nback[1] - O[1])**2) + ((Nback[2] - O[2])**2))		#Magnitude = 3.8
+			#ax.plot([O[0] , Nback[0]] , [O[1] , Nback[1]] , [O[2] , Nback[2]] , marker = 'o')
+			#5 - Scale vector to new magnitude
+			NBack = numpy.array([Nback[0] - O[0] , Nback[1] - O[1] , Nback[2] - O[2]])				#Get components of the vector after it was returned to its original starting point "back"
+			NScaled = (2.4 / 3.8) * NBack										#Multiply by (distance to final N position / distance between the 2 CA atoms) the scaling factor, this gives the value each axis needs to move by to each coordinates that result in the new scaled magnitude
+			N = numpy.add(O , NScaled)										#Add scaled components to the initial coordinates to get new terminus coordinates (the final coordintes of the N atom)
+			ComN = [N[0] - O[0] , N[1] - O[1] , N[2] - O[2]]
+			MagN = numpy.sqrt(((N[0] - O[0])**2) + ((N[1] - O[1])**2) + ((N[2] - O[2])**2))				#Magnitude = 2.4
+			ax.plot([O[0] , N[0]] , [O[1] , N[1]] , [O[2] , N[2]] , marker = 'o')
+			#6- Confirm angle between vectors
+			#angleN = numpy.degrees(numpy.arccos((numpy.dot(ComN , Com)) / (MagN * Mag)))				#Angle of rotation (is != 20.5 because it is calculated with the Z axis giving instead 12.08, but in 2D space the code will give 20.5) - This is commented out because it results in a RuntimeWarning through NumPy, basically the value is very very small is gets rounded up to 0 making the division impposible, it is not a math problem rather more a NumPy problem since it has low resolution
+			#The Oxygen atom
+			#1 - Move To Axis (0 , 0 , 0)
+			Oxori = P - O
+			MagCori = numpy.sqrt(((Oxori[0])**2) + ((Oxori[1])**2) + ((Oxori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Oxori[0]] , [0 , Oxori[1]] , [0 , Oxori[2]] , marker = 'o')
+			#2 - Define Rotation Matrix
+			A = numpy.radians(00.0)	#Phi 	Angle
+			B = numpy.radians(46.7)	#Theta	Angle
+			Y = numpy.radians(00.0)	#Psi	Angle
+			#2D Rotation Matrix - works best because the peptide bond is on a plane anyway, so there is no change in the Z axis.
+			OxR = [	[numpy.cos(B)	,	-numpy.sin(B)	,	0] , 
+				[numpy.sin(B)	, 	 numpy.cos(B)	,	0] ,
+				[	0	,		0	,	1]]
+			"""
+			#XYX steps Tait-Bryan angles
+			OxR = [	[numpy.cos(B)			,	numpy.sin(B)*numpy.sin(Y)						,	numpy.sin(B)*numpy.cos(Y)					] , 
+				[numpy.sin(B) *numpy.sin(A)	, 	numpy.cos(Y)*numpy.cos(A)-numpy.cos(B)*numpy.sin(Y)*numpy.sin(A)	,	numpy.cos(A)*numpy.sin(Y)-numpy.cos(B)*numpy.cos(Y)*numpy.sin(A)] ,
+				[-numpy.sin(B)*numpy.cos(A)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(A)*numpy.cos(Y)	,	numpy.sin(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(Y)*numpy.cos(A)]]
+			#XYZ steps Tait-Bryan angles
+			OxR = [	[numpy.cos(B)*numpy.cos(Y)						,	-numpy.cos(Y)*numpy.sin(B)						,	numpy.sin(B)			] , 
+				[numpy.cos(A)*numpy.sin(Y)+numpy.cos(Y)*numpy.sin(A)*numpy.sin(B)	, 	numpy.cos(A)*numpy.cos(Y)-numpy.sin(A)*numpy.sin(B)*numpy.sin(Y)	,	-numpy.cos(B)*numpy.sin(A)	] ,
+				[numpy.sin(A)*numpy.sin(Y)-numpy.cos(A)*numpy.cos(Y)*numpy.sin(B)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(A)*numpy.sin(B)*numpy.sin(Y)	,	numpy.cos(A)*numpy.cos(B)	]]
+			"""
+			#3 - Rotate Matrix on XY axis, keeping Z unchanged
+			Oxrot = numpy.dot(OxR , Oxori)
+			MagOxrot = numpy.sqrt(((Oxori[0])**2) + ((Oxori[1])**2) + ((Oxori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Oxrot[0]] , [0 , Oxrot[1]] , [0 , Oxrot[2]] , marker = 'o')
+			#4 - Move rotated vector back to original start point
+			Oxback = Oxrot + O
+			MagOxback = numpy.sqrt(((Oxback[0] - O[0])**2) + ((Oxback[1] - O[1])**2) + ((Oxback[2] - O[2])**2))	#Magnitude = 3.8
+			#ax.plot([O[0] , Oxback[0]] , [O[1] , Oxback[1]] , [O[2] , Oxback[2]] , marker = 'o')
+			#5 - Scale vector to new magnitude
+			OxBack = numpy.array([Oxback[0] - O[0] , Oxback[1] - O[1] , Oxback[2] - O[2]])				#Get components of the vector after it was returned to its original starting point "back"
+			OxScaled = (2.4 / 3.8) * OxBack										#Multiply by (distance to final O position / distance between the 2 CA atoms) the scaling factor, this gives the value each axis needs to move by to each coordinates that result in the new scaled magnitude
+			Oxg = numpy.add(O , OxScaled)										#Add scaled components to the initial coordinates to get new terminus coordinates (the final coordintes of the O atom)
+			ComOx = [Oxg[0] - O[0] , Oxg[1] - O[1] , Oxg[2] - O[2]]
+			MagOx = numpy.sqrt(((Oxg[0] - O[0])**2) + ((Oxg[1] - O[1])**2) + ((Oxg[2] - O[2])**2))			#Magnitude = 2.4
+			ax.plot([O[0] , Oxg[0]] , [O[1] , Oxg[1]] , [O[2] , Oxg[2]] , marker = 'o')
+			#6- Confirm angle between vectors
+			#angleOx = numpy.degrees(numpy.arccos((numpy.dot(ComOx , Com)) / (MagOx * Mag)))			#Angle of rotation (is != 20.5 because it is calculated with the Z axis giving instead 12.08, but in 2D space the code will give 20.5) - This is commented out because it results in a RuntimeWarning through NumPy, basically the value is very very small is gets rounded up to 0 making the division impposible, it is not a math problem rather more a NumPy problem since it has low resolution
+			#Plot to visualise
+			ax.scatter(0 , 0 , 0 , marker = 's' , color = 'black' , s = 50)
+			ax.set_xlabel('X')
+			ax.set_ylabel('Y')
+			ax.set_zlabel('Z')
+			#plt.show()
+			'''
+			#Study!!!
+			#Find the A B Y angles
+			O  =	[1.458 , 0.000 , 0.000]
+			C  =	[2.009 , 1.420 , 0.000]
+			Oxg=	[1.251 , 2.390 , 0.000]
+			N  =	[3.332 , 1.536 , 0.000]
+			P  =	[3.988 , 2.839 , 0.000]
+			#The Carbon Atom
+			MagOP = numpy.sqrt(((P[0] - O[0])**2) + ((P[1] - O[1])**2) + ((P[2] - O[2])**2))			#Magnitude = 3.8
+			MagOC = numpy.sqrt(((C[0] - O[0])**2) + ((C[1] - O[1])**2) + ((C[2] - O[2])**2))			#Magnitude = 1.5
+			ComOP = [P[0] - O[0] , P[1] - O[1] , P[2] - O[2]]
+			ComOC = [C[0] - O[0] , C[1] - O[1] , C[2] - O[2]]
+			angle = numpy.degrees(numpy.arccos((numpy.dot(ComOP , ComOC)) / (MagOC * MagOP)))			#Angle = 20.5			
+			print(angle)
+			ax.plot([O[0] , P[0]] , [O[1] , P[1]] , [O[2] , P[2]] , marker = 'o')
+			ax.plot([O[0] , C[0]] , [O[1] , C[1]] , [O[2] , C[2]] , marker = 'o')
+			#The Nitrogen Atom
+			MagON = numpy.sqrt(((N[0] - O[0])**2) + ((N[1] - O[1])**2) + ((N[2] - O[2])**2))			#Magnitude = 2.4
+			ComON = [N[0] - O[0] , N[1] - O[1] , N[2] - O[2]]
+			angle = numpy.degrees(numpy.arccos((numpy.dot(ComOP , ComON)) / (MagON * MagOP)))			#Angle = 9.0 (360 - 9 = 351)			
+			print(angle)
+			ax.plot([O[0] , N[0]] , [O[1] , N[1]] , [O[2] , N[2]] , marker = 'o')
+			#The Oxygen Atom
+			MagOOx = numpy.sqrt(((Ox[0] - O[0])**2) + ((Ox[1] - O[1])**2) + ((Ox[2] - O[2])**2))			#Magnitude = 2.4
+			ComOOx = [Ox[0] - O[0] , Ox[1] - O[1] , Ox[2] - O[2]]
+			angle = numpy.degrees(numpy.arccos((numpy.dot(ComOP , ComOOx)) / (MagOOx * MagOP)))			#Angle = 46.7
+			print(angle)
+			ax.plot([O[0] , Ox[0]] , [O[1] , Ox[1]] , [O[2] , Ox[2]] , marker = 'o')
+			plt.show()
+			'''
+			TheLineCA = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'CA' , '' , 'GLY' , 'A' , ResCount , '' , str(round(Ox , 3)) , str(round(Oy , 3)) , str(round(Oz , 3)) , 1.0 , 0.0 , 'C' , '') + '\n'
+			AtoCount += 1
+			TheLineC = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'C' , '' , 'GLY' , 'A' , ResCount , '' , str(round(C[0] , 3)) , str(round(C[1] , 3)) , str(round(C[2] , 3)) , 1.0 , 0.0 , 'C' , '') + '\n'
+			AtoCount += 1
+			TheLineOxg = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'O' , '' , 'GLY' , 'A' , ResCount , '' , str(round(Oxg[0] , 3)) , str(round(Oxg[1] , 3)) , str(round(Oxg[2] , 3)) , 1.0 , 0.0 , 'O' , '') + '\n'
+			AtoCount += 1
+			ResCount += 1
+			TheLineN = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'N' , '' , 'GLY' , 'A' , ResCount , '' , str(round(N[0] , 3)) , str(round(N[1] , 3)) , str(round(N[2] , 3)) , 1.0 , 0.0 , 'N' , '') + '\n'
+			output = open('Backbone.pdb' , 'a')
+			output.write(TheLineCA)
+			output.write(TheLineC)
+			output.write(TheLineOxg)
+			output.write(TheLineN)
+			output.close()
+			tag ='-'
+		else:
+			Ox = round(float(line[count_x]) , 3)
+			Oy = round(float(line[count_y]) , 3)
+			Oz = round(float(line[count_z]) , 3)
+			if Ox == '0' and Oy == '0' and Oz == '0':
+				continue
+			count_x += 3
+			count_y += 3
+			count_z += 3
+			AtoCount += 1
+			try:
+				Px = round(float(line[count_x]) , 3)
+				Py = round(float(line[count_y]) , 3)
+				Pz = round(float(line[count_z]) , 3)
+			except:
+				pass
+			#Initial and Terminus coordinates
+			O = numpy.array([Ox , Oy , Oz])
+			P = numpy.array([Px , Py , Pz])
+			ax.plot([O[0] , P[0]] , [O[1] , P[1]] , [O[2] , P[2]] , marker = 'o')
+			Mag = numpy.sqrt(((P[0] - O[0])**2) + ((P[1] - O[1])**2) + ((P[2] - O[2])**2))			#Magnitude = 3.8
+			Com = [P[0] - O[0] , P[1] - O[1] , P[2] - O[2]]
+			#The Carbon atom
+			#1 - Move To Axis (0 , 0 , 0)
+			Cori = P - O
+			MagCori = numpy.sqrt(((Cori[0])**2) + ((Cori[1])**2) + ((Cori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Cori[0]] , [0 , Cori[1]] , [0 , Cori[2]] , marker = 'o')
+			#2 - Define Rotation Matrix
+			A = numpy.radians(00.0)	#Phi 	Angle
+			B = numpy.radians(339.5)#Theta	Angle
+			Y = numpy.radians(00.0)	#Psi	Angle
+			#2D Rotation Matrix - works best because the peptide bond is on a plane anyway, so there is no change in the Z axis.
+			CR = [	[numpy.cos(B)	,	-numpy.sin(B)	,	0] , 
+				[numpy.sin(B)	, 	 numpy.cos(B)	,	0] ,
+				[	0	,		0	,	1]]
+			"""
+			#XYX steps Tait-Bryan angles
+			CR = [	[numpy.cos(B)			,	numpy.sin(B)*numpy.sin(Y)						,	numpy.sin(B)*numpy.cos(Y)					] , 
+				[numpy.sin(B) *numpy.sin(A)	, 	numpy.cos(Y)*numpy.cos(A)-numpy.cos(B)*numpy.sin(Y)*numpy.sin(A)	,	numpy.cos(A)*numpy.sin(Y)-numpy.cos(B)*numpy.cos(Y)*numpy.sin(A)] ,
+				[-numpy.sin(B)*numpy.cos(A)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(A)*numpy.cos(Y)	,	numpy.sin(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(Y)*numpy.cos(A)]]
+			#XYZ steps Tait-Bryan angles
+			CR = [	[numpy.cos(B)*numpy.cos(Y)						,	-numpy.cos(Y)*numpy.sin(B)						,	numpy.sin(B)			] , 
+				[numpy.cos(A)*numpy.sin(Y)+numpy.cos(Y)*numpy.sin(A)*numpy.sin(B)	, 	numpy.cos(A)*numpy.cos(Y)-numpy.sin(A)*numpy.sin(B)*numpy.sin(Y)	,	-numpy.cos(B)*numpy.sin(A)	] ,
+				[numpy.sin(A)*numpy.sin(Y)-numpy.cos(A)*numpy.cos(Y)*numpy.sin(B)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(A)*numpy.sin(B)*numpy.sin(Y)	,	numpy.cos(A)*numpy.cos(B)	]]
+			"""
+			#3 - Rotate Matrix on XY axis, keeping Z unchanged
+			Crot = numpy.dot(CR , Cori)
+			MagCrot = numpy.sqrt(((Cori[0])**2) + ((Cori[1])**2) + ((Cori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Crot[0]] , [0 , Crot[1]] , [0 , Crot[2]] , marker = 'o')
+			#4 - Move rotated vector back to original start point
+			Cback = Crot + O
+			MagCback = numpy.sqrt(((Cback[0] - O[0])**2) + ((Cback[1] - O[1])**2) + ((Cback[2] - O[2])**2))	#Magnitude = 3.8
+			#ax.plot([O[0] , Cback[0]] , [O[1] , Cback[1]] , [O[2] , Cback[2]] , marker = 'o')
+			#5 - Scale vector to new magnitude
+			CBack = numpy.array([Cback[0] - O[0] , Cback[1] - O[1] , Cback[2] - O[2]])			#Get components of the vector after it was returned to its original starting point "back"
+			CScaled = (1.5 / 3.8) * CBack									#Multiply by (distance to final C position / distance between the 2 CA atoms) the scaling factor, this gives the value each axis needs to move by to each coordinates that result in the new scaled magnitude
+			C = numpy.add(O , CScaled)									#Add scaled components to the initial coordinates to get new terminus coordinates (the final coordintes of the C atom)
+			ComC = [C[0] - O[0] , C[1] - O[1] , C[2] - O[2]]
+			MagC = numpy.sqrt(((C[0] - O[0])**2) + ((C[1] - O[1])**2) + ((C[2] - O[2])**2))			#Magnitude = 1.5
+			ax.plot([O[0] , C[0]] , [O[1] , C[1]] , [O[2] , C[2]] , marker = 'o')
+			#6- Confirm angle between vectors
+			#angleC = numpy.degrees(numpy.arccos((numpy.dot(ComC , Com)) / (MagC * Mag)))			#Angle of rotation (is != 20.5 because it is calculated with the Z axis giving instead 12.08, but in 2D space the code will give 20.5) - This is commented out because it results in a RuntimeWarning through NumPy, basically the value is very very small is gets rounded up to 0 making the division impposible, it is not a math problem rather more a NumPy problem since it has low resolution
+			#The Nitrogen atom
+			#1 - Move To Axis (0 , 0 , 0)
+			Nori = P - O
+			MagNori = numpy.sqrt(((Nori[0])**2) + ((Nori[1])**2) + ((Nori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Nori[0]] , [0 , Nori[1]] , [0 , Nori[2]] , marker = 'o')
+			#2 - Define Rotation Matrix
+			AA = numpy.radians(00.0)	#Phi 	Angle
+			BB = numpy.radians(9.0)		#Theta	Angle
+			YY = numpy.radians(00.0)	#Psi	Angle
+			#2D Rotation Matrix - works best because the peptide bond is on a plane anyway, so there is no change in the Z axis.
+			NR = [	[numpy.cos(BB)	,	-numpy.sin(BB)	,	0] , 
+				[numpy.sin(BB)	, 	 numpy.cos(BB)	,	0] ,
+				[	0	,		0	,	1]]
+			"""
+			#XYX steps Tait-Bryan angles
+			NR = [	[numpy.cos(BB)			,	numpy.sin(BB)*numpy.sin(YY)						,	numpy.sin(BB)*numpy.cos(YY)						] , 
+				[numpy.sin(BB) *numpy.sin(AA)	, 	numpy.cos(YY)*numpy.cos(AA)-numpy.cos(BB)*numpy.sin(YY)*numpy.sin(AA)	,	numpy.cos(AA)*numpy.sin(YY)-numpy.cos(BB)*numpy.cos(YY)*numpy.sin(AA)	] ,
+				[-numpy.sin(BB)*numpy.cos(AA)	,	numpy.cos(YY)*numpy.sin(AA)+numpy.cos(BB)*numpy.cos(AA)*numpy.cos(YY)	,	numpy.sin(YY)*numpy.sin(AA)+numpy.cos(BB)*numpy.cos(YY)*numpy.cos(AA)	]]
+			#XYZ steps Tait-Bryan angles
+			NR = [	[numpy.cos(BB)*numpy.cos(YY)						,	-numpy.cos(YY)*numpy.sin(BB)						,	numpy.sin(BB)			] , 
+				[numpy.cos(AA)*numpy.sin(YY)+numpy.cos(YY)*numpy.sin(AA)*numpy.sin(BB)	, 	numpy.cos(AA)*numpy.cos(YY)-numpy.sin(AA)*numpy.sin(BB)*numpy.sin(YY)	,	-numpy.cos(BB)*numpy.sin(AA)	] ,
+				[numpy.sin(AA)*numpy.sin(YY)-numpy.cos(AA)*numpy.cos(YY)*numpy.sin(BB)	,	numpy.cos(YY)*numpy.sin(AA)+numpy.cos(AA)*numpy.sin(BB)*numpy.sin(YY)	,	numpy.cos(AA)*numpy.cos(BB)	]]
+			"""
+			#3 - Rotate Matrix on XY axis, keeping Z unchanged
+			Nrot = numpy.dot(NR , Nori)
+			MagNrot = numpy.sqrt(((Nori[0])**2) + ((Nori[1])**2) + ((Nori[2])**2))					#Magnitude = 3.8
+			#ax.plot([0 , Nrot[0]] , [0 , Nrot[1]] , [0 , Nrot[2]] , marker = 'o')
+			#4 - Move rotated vector back to original start point
+			Nback = Nrot + O
+			MagNback = numpy.sqrt(((Nback[0] - O[0])**2) + ((Nback[1] - O[1])**2) + ((Nback[2] - O[2])**2))		#Magnitude = 3.8
+			#ax.plot([O[0] , Nback[0]] , [O[1] , Nback[1]] , [O[2] , Nback[2]] , marker = 'o')
+			#5 - Scale vector to new magnitude
+			NBack = numpy.array([Nback[0] - O[0] , Nback[1] - O[1] , Nback[2] - O[2]])				#Get components of the vector after it was returned to its original starting point "back"
+			NScaled = (2.4 / 3.8) * NBack										#Multiply by (distance to final N position / distance between the 2 CA atoms) the scaling factor, this gives the value each axis needs to move by to each coordinates that result in the new scaled magnitude
+			N = numpy.add(O , NScaled)										#Add scaled components to the initial coordinates to get new terminus coordinates (the final coordintes of the N atom)
+			ComN = [N[0] - O[0] , N[1] - O[1] , N[2] - O[2]]
+			MagN = numpy.sqrt(((N[0] - O[0])**2) + ((N[1] - O[1])**2) + ((N[2] - O[2])**2))				#Magnitude = 2.4
+			ax.plot([O[0] , N[0]] , [O[1] , N[1]] , [O[2] , N[2]] , marker = 'o')
+			#6- Confirm angle between vectors
+			#angleN = numpy.degrees(numpy.arccos((numpy.dot(ComN , Com)) / (MagN * Mag)))				#Angle of rotation (is != 20.5 because it is calculated with the Z axis giving instead 12.08, but in 2D space the code will give 20.5) - This is commented out because it results in a RuntimeWarning through NumPy, basically the value is very very small is gets rounded up to 0 making the division impposible, it is not a math problem rather more a NumPy problem since it has low resolution
+			#The Oxygen atom
+			#1 - Move To Axis (0 , 0 , 0)
+			Oxori = P - O
+			MagCori = numpy.sqrt(((Oxori[0])**2) + ((Oxori[1])**2) + ((Oxori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Oxori[0]] , [0 , Oxori[1]] , [0 , Oxori[2]] , marker = 'o')
+			#2 - Define Rotation Matrix
+			A = numpy.radians(00.0)	#Phi 	Angle
+			B = numpy.radians(313.3)#Theta	Angle
+			Y = numpy.radians(00.0)	#Psi	Angle
+			#2D Rotation Matrix - works best because the peptide bond is on a plane anyway, so there is no change in the Z axis.
+			OxR = [	[numpy.cos(B)	,	-numpy.sin(B)	,	0] , 
+				[numpy.sin(B)	, 	 numpy.cos(B)	,	0] ,
+				[	0	,		0	,	1]]
+			"""
+			#XYX steps Tait-Bryan angles
+			OxR = [	[numpy.cos(B)			,	numpy.sin(B)*numpy.sin(Y)						,	numpy.sin(B)*numpy.cos(Y)					] , 
+				[numpy.sin(B) *numpy.sin(A)	, 	numpy.cos(Y)*numpy.cos(A)-numpy.cos(B)*numpy.sin(Y)*numpy.sin(A)	,	numpy.cos(A)*numpy.sin(Y)-numpy.cos(B)*numpy.cos(Y)*numpy.sin(A)] ,
+				[-numpy.sin(B)*numpy.cos(A)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(A)*numpy.cos(Y)	,	numpy.sin(Y)*numpy.sin(A)+numpy.cos(B)*numpy.cos(Y)*numpy.cos(A)]]
+			#XYZ steps Tait-Bryan angles
+			OxR = [	[numpy.cos(B)*numpy.cos(Y)						,	-numpy.cos(Y)*numpy.sin(B)						,	numpy.sin(B)			] , 
+				[numpy.cos(A)*numpy.sin(Y)+numpy.cos(Y)*numpy.sin(A)*numpy.sin(B)	, 	numpy.cos(A)*numpy.cos(Y)-numpy.sin(A)*numpy.sin(B)*numpy.sin(Y)	,	-numpy.cos(B)*numpy.sin(A)	] ,
+				[numpy.sin(A)*numpy.sin(Y)-numpy.cos(A)*numpy.cos(Y)*numpy.sin(B)	,	numpy.cos(Y)*numpy.sin(A)+numpy.cos(A)*numpy.sin(B)*numpy.sin(Y)	,	numpy.cos(A)*numpy.cos(B)	]]
+			"""
+			#3 - Rotate Matrix on XY axis, keeping Z unchanged
+			Oxrot = numpy.dot(OxR , Oxori)
+			MagOxrot = numpy.sqrt(((Oxori[0])**2) + ((Oxori[1])**2) + ((Oxori[2])**2))				#Magnitude = 3.8
+			#ax.plot([0 , Oxrot[0]] , [0 , Oxrot[1]] , [0 , Oxrot[2]] , marker = 'o')
+			#4 - Move rotated vector back to original start point
+			Oxback = Oxrot + O
+			MagOxback = numpy.sqrt(((Oxback[0] - O[0])**2) + ((Oxback[1] - O[1])**2) + ((Oxback[2] - O[2])**2))	#Magnitude = 3.8
+			#ax.plot([O[0] , Oxback[0]] , [O[1] , Oxback[1]] , [O[2] , Oxback[2]] , marker = 'o')
+			#5 - Scale vector to new magnitude
+			OxBack = numpy.array([Oxback[0] - O[0] , Oxback[1] - O[1] , Oxback[2] - O[2]])				#Get components of the vector after it was returned to its original starting point "back"
+			OxScaled = (2.4 / 3.8) * OxBack										#Multiply by (distance to final O position / distance between the 2 CA atoms) the scaling factor, this gives the value each axis needs to move by to each coordinates that result in the new scaled magnitude
+			Oxg = numpy.add(O , OxScaled)										#Add scaled components to the initial coordinates to get new terminus coordinates (the final coordintes of the O atom)
+			ComOx = [Oxg[0] - O[0] , Oxg[1] - O[1] , Oxg[2] - O[2]]
+			MagOx = numpy.sqrt(((Oxg[0] - O[0])**2) + ((Oxg[1] - O[1])**2) + ((Oxg[2] - O[2])**2))			#Magnitude = 2.4
+			ax.plot([O[0] , Oxg[0]] , [O[1] , Oxg[1]] , [O[2] , Oxg[2]] , marker = 'o')
+			#6- Confirm angle between vectors
+			#angleOx = numpy.degrees(numpy.arccos((numpy.dot(ComOx , Com)) / (MagOx * Mag)))			#Angle of rotation (is != 20.5 because it is calculated with the Z axis giving instead 12.08, but in 2D space the code will give 20.5) - This is commented out because it results in a RuntimeWarning through NumPy, basically the value is very very small is gets rounded up to 0 making the division impposible, it is not a math problem rather more a NumPy problem since it has low resolution
+			#Plot to visualise
+			ax.scatter(0 , 0 , 0 , marker = 's' , color = 'black' , s = 50)
+			ax.set_xlabel('X')
+			ax.set_ylabel('Y')
+			ax.set_zlabel('Z')
+			#plt.show()
+			'''
+			#Study!!!
+			#Find the A B Y angles
+			O  =	[1.458 , 0.000 , 0.000]
+			C  =	[2.009 , 1.420 , 0.000]
+			Oxg=	[1.251 , 2.390 , 0.000]
+			N  =	[3.332 , 1.536 , 0.000]
+			P  =	[3.988 , 2.839 , 0.000]
+			#The Carbon Atom
+			MagOP = numpy.sqrt(((P[0] - O[0])**2) + ((P[1] - O[1])**2) + ((P[2] - O[2])**2))			#Magnitude = 3.8
+			MagOC = numpy.sqrt(((C[0] - O[0])**2) + ((C[1] - O[1])**2) + ((C[2] - O[2])**2))			#Magnitude = 1.5
+			ComOP = [P[0] - O[0] , P[1] - O[1] , P[2] - O[2]]
+			ComOC = [C[0] - O[0] , C[1] - O[1] , C[2] - O[2]]
+			angle = numpy.degrees(numpy.arccos((numpy.dot(ComOP , ComOC)) / (MagOC * MagOP)))			#Angle = 20.5			
+			print(angle)
+			ax.plot([O[0] , P[0]] , [O[1] , P[1]] , [O[2] , P[2]] , marker = 'o')
+			ax.plot([O[0] , C[0]] , [O[1] , C[1]] , [O[2] , C[2]] , marker = 'o')
+			#The Nitrogen Atom
+			MagON = numpy.sqrt(((N[0] - O[0])**2) + ((N[1] - O[1])**2) + ((N[2] - O[2])**2))			#Magnitude = 2.4
+			ComON = [N[0] - O[0] , N[1] - O[1] , N[2] - O[2]]
+			angle = numpy.degrees(numpy.arccos((numpy.dot(ComOP , ComON)) / (MagON * MagOP)))			#Angle = 9.0 (360 - 9 = 351)			
+			print(angle)
+			ax.plot([O[0] , N[0]] , [O[1] , N[1]] , [O[2] , N[2]] , marker = 'o')
+			#The Oxygen Atom
+			MagOOx = numpy.sqrt(((Ox[0] - O[0])**2) + ((Ox[1] - O[1])**2) + ((Ox[2] - O[2])**2))			#Magnitude = 2.4
+			ComOOx = [Ox[0] - O[0] , Ox[1] - O[1] , Ox[2] - O[2]]
+			angle = numpy.degrees(numpy.arccos((numpy.dot(ComOP , ComOOx)) / (MagOOx * MagOP)))			#Angle = 46.7
+			print(angle)
+			ax.plot([O[0] , Ox[0]] , [O[1] , Ox[1]] , [O[2] , Ox[2]] , marker = 'o')
+			plt.show()
+			'''
+			TheLineCA = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'CA' , '' , 'GLY' , 'A' , ResCount , '' , str(round(Ox , 3)) , str(round(Oy , 3)) , str(round(Oz , 3)) , 1.0 , 0.0 , 'C' , '') + '\n'
+			AtoCount += 1
+			TheLineC = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'C' , '' , 'GLY' , 'A' , ResCount , '' , str(round(C[0] , 3)) , str(round(C[1] , 3)) , str(round(C[2] , 3)) , 1.0 , 0.0 , 'C' , '') + '\n'
+			AtoCount += 1
+			TheLineOxg = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'O' , '' , 'GLY' , 'A' , ResCount , '' , str(round(Oxg[0] , 3)) , str(round(Oxg[1] , 3)) , str(round(Oxg[2] , 3)) , 1.0 , 0.0 , 'O' , '') + '\n'
+			AtoCount += 1
+			ResCount += 1
+			TheLineN = '{:6}{:5d} {:4}{:1}{:3} {:1}{:4d}{:1}   {:8}{:8}{:8}{:6}{:6}          {:2}{:2}'.format('ATOM' , AtoCount , 'N' , '' , 'GLY' , 'A' , ResCount , '' , str(round(N[0] , 3)) , str(round(N[1] , 3)) , str(round(N[2] , 3)) , 1.0 , 0.0 , 'N' , '') + '\n'
+			output = open('Backbone.pdb' , 'a')
+			output.write(TheLineCA)
+			output.write(TheLineC)
+			output.write(TheLineOxg)
+			output.write(TheLineN)
+			output.close()
+			tag ='+'
+	#plt.show()
+	#Remove the last 3 lines
+	os.system("sed -i '$ d' ./Backbone.pdb")
+	os.system("sed -i '$ d' ./Backbone.pdb")
+	os.system("sed -i '$ d' ./Backbone.pdb")
+	#Add the TER as the last line
+	Term = open('Backbone.pdb' , 'a')
+	Term.write('TER')
+	Term.close()
+	#The results of the Rotation Matrix is not optimum because the angles rotate on R2 (2D XY space) rather than R3 (3D XYZ space), keeping the Z axis rotation stationary allows for the backbone to be connected, but the C , O , N atoms not quit in the correct place to establish secondary structure hydrogen bonds. A quick solution is to Rosetta FastRelax the structure's cartesian coordinates
+	#Relax cartesian coordinates to to fix suboptimal backbone
+	pose = pose_from_pdb('Backbone.pdb')
+	#Establish cartesian constraints
+	mover = pyrosetta.rosetta.protocols.simple_moves.AddConstraintsToCurrentConformationMover()
+	mover.CA_only()
+	mover.generate_constraints(pose)
+	mover.apply(pose)
+	#Call a score function that uses cartesian constraint weights
+	scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('talaris2013_cart')
+	scorefxn.set_weight(rosetta.core.scoring.coordinate_constraint , 1.0)
+	#FastRelax the structure
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	relax.cartesian(True)
+	relax.ramp_down_constraints(False)
+	relax.apply(pose)
+	pose.dump_pdb('DeNovo.pdb')
+	os.system('rm Backbone.pdb')
 #--------------------------------------------------------------------------------------------------------------------------------------
 DrawPDB(line)
-pose = pose_from_pdb('DeNovo.pdb')
-Design(pose)
-pose = pose_from_pdb('structure.pdb')
-Fragments(pose)
+Design('DeNovo.pdb')
+Fragments('structure.pdb')
