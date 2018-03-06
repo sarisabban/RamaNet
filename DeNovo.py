@@ -75,10 +75,9 @@ def SASA(pose):
 	os.remove('ToDesign.pdb')										#Keep working directory clean
 	return(surface , boundery , core)								#Return values [0] = Motif_From [1] = Motif_To
 
-def Design(Pose):
+def Design(pose):
 	''' Applies FastDesign to change the whole structure's amino acids (one layer at a time as well as designing towards an optimally packed core) while maintaining the same backbone. Should be faster than the Whole method and results in a better final structure than the Layer method '''
 	''' Generates the Designed.pdb file '''
-	pose = pose_from_pdb(Pose)
 	#A - Relax original structure
 	scorefxn = get_fa_scorefxn()
 	score1_original_before_relax = scorefxn(pose)					#Measure score before relaxing
@@ -135,11 +134,10 @@ def Design(Pose):
 	print('Relaxed Original Score:' , '\t' , score2_original_after_relax)
 	print('Relaxed Design Score:' , '\t\t' , score3_of_design_after_relax)
 
-def Fragments(Pose):
+def Fragments(pose):
 	''' Submits the pose to the Robetta server (http://www.robetta.org) for fragment generation that are used for the Abinitio folding simulation. Then measures the RMSD for each fragment at each position and chooses the lowest RMSD. Then averages out the lowest RMSDs. Then plots the lowest RMSD fragment for each positon '''
 	''' Generates the 3-mer file, the 9-mer file, the PsiPred file, the RMSD vs Position PDF plot with the averaged fragment RMSD printed in the plot '''
 	#Make the 3-mer and 9-mer fragment files and the PSIPRED file using the Robetta server
-	pose = pose_from_pdb(Pose)
 	sequence = pose.sequence()
 	#Post
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
@@ -695,5 +693,7 @@ def GAN():
 #--------------------------------------------------------------------------------------------------------------------------------------
 #GAN()
 DrawPDB(line)
-Design('DeNovo.pdb')
-Fragments('structure.pdb')
+pose = pose_from_pdb('DeNovo.pdb')
+Design(pose)
+pose = pose_from_pdb('structure.pdb')
+Fragments(pose)
