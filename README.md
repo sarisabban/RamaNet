@@ -5,30 +5,34 @@ Preforms De Novo Design using Machine Learning and PyRosetta to generates a nove
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. Use the following command (in GNU/Linux) to install all necessary programs and python modules for this script to run successfully:
 
-`sudo apt update && sudo apt install python3-pip DSSP gnuplot && sudo pip3 install biopython biopandas bs4 tqdm`
+`sudo apt update && sudo apt full-upgrade && sudo apt install python3-pip DSSP gnuplot && sudo pip3 install biopython bs4 tqdm pandas numpy keras tensorflow scipy `
 
 ## Description:
-This is a script that uses Machine Learning and PyRosetta to preform De Novo Design (from the beginning) i.e. develop and design a synthetic protein structure totally computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits this topology, then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragment files in preparation for an Abinitio fold simulation. The Abinitio script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the Abinitio fold simulation might go (idealy you want all positions to be under 2Å RMSD).
+This is a script that uses Machine Learning and PyRosetta to preform De Novo Protein Design (from the beginning) i.e. develop and design a synthetic protein structure totally computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits this topology, then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragment files in preparation for an Abinitio fold simulation. The Abinitio script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the Abinitio fold simulation might go (idealy you want an average RMSD < 2Å).
 
-The script will generate 1 structure. It is advised to run this script in an array to generate multiple strctures and see which one has low RMSD fragments. Mind you, if you generate too many structures this might overwhelm the Robetta Server by submitting and requesting too many fragment files, please be considirate and run this script once to generate 1 structure at a time only.
+The script will generate 1 structure. It is advised to run this script in an array to generate multiple strctures and see which one has the lowest average RMSD fragments. Mind you, if you generate too many structures this might overwhelm the Robetta Server by submitting and requesting too many fragment files, please be considirate and run this script once to generate 1 structure at a time only.
 
 ## How To Use:
-1. Use the following command to generate the Machine Learning Dataset from the Protein Databank Database (computation time ~72 hours and requires ~120GB of free disk space):
+1. You do not need to generate the Machine Learning Dataset, it is already provided, but if you want to replicate our work use the following command to generate the Machine Learning Dataset from the Protein Databank Database (computation time ~72 hours and requires ~120GB of free disk space):
 
 `python3 Database.py`
 
 This script will result in 1 file:
 
-* data.csv
+* dataCA.csv
 
-The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, and with an Rg value of less than 15. The script results in a dataset with the first column is the training example number, then the name of the PDB file, then the type of secondary structure at each amino acid position [0 = Nothing or empty (i.e a short protein) , 1 = Loop , 2 = Helix , 3 = Strand], then there are the constraint distances between the first amino acid and the second, then third, then forth etc... If errors occure it is fine, some protein files will cause errors (they will be deleted), but the script should continue to the end and result in a dataset.
+The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, and with an Rg value of less than 15. The script results in a dataset with the first column as the training example number, then the name of the PDB file, then the XYZ coordinates of each CA atom only of each amino acid residue; starting at X_1 Y_1 Z_1 then X_2 Y_2 Z_2 etc... 0 indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occure, that is fine, some protein files will cause errors (and they will be deleted), but the script should continue all the way to the end and result in a dataset.
 
-2. Use the following command to preform DeNovo protein design:
+You can then use the following command to train the General Adverserial Neural Netowork on the dataset.
+
+`python3 GAN.py`
+
+2. Use the following command to preform the De Novo protein design:
 
 `python3 DeNovo.py`
 
 This script will result in 7 files:
-* Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (DeNovo.pdb)
+* Topology file, which is basically just the structure of the backbone drawn using a sequence of Glycine (DeNovo.pdb)
 * Sequence designed file (structure.pdb)
 * Abinitio input files (structure.pdb, frags.200.3mers, frags.200.9mers, pre.psipred.ss2)
 * Fragment quality plot (plot_frag.pdb)
