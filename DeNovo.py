@@ -721,6 +721,7 @@ def GAN():
 #GAN()
 DrawPDB(line)
 Design.Whole('DeNovo.pdb')
+time.sleep(30)
 Design.Pack('DesignedWhole.pdb')
 os.system('rm DesignedWhole.pdb')
 Fragments('Designed.pdb')
