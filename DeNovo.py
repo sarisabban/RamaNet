@@ -687,7 +687,11 @@ def DrawPDB(line):
 	relax.apply(pose)
 	pose.dump_pdb('DeNovo.pdb')
 	os.system('rm Backbone.pdb')
+
+def GAN():
+	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
+#GAN()
 DrawPDB(line)
 Design('DeNovo.pdb')
 Fragments('structure.pdb')
