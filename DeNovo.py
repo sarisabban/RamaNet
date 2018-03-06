@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
-import os , re , time , datetime , random , requests , urllib.request , bs4 , math , Bio.PDB
+import os , re , time , datetime , random , requests , urllib.request , bs4 , math , Bio.PDB , numpy
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
