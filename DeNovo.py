@@ -714,6 +714,21 @@ def DrawPDB(line):
 	relax.apply(pose)
 	pose.dump_pdb('DeNovo.pdb')
 	os.system('rm Backbone.pdb')
+	#Replace GLY with VAL
+	for res in range(len(pose) + 1):
+		if res == 0:
+			pass
+		else:
+			mutate_residue(pose , res , 'V')
+	#FastRelax the structure
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	relax.cartesian(True)
+	relax.ramp_down_constraints(False)
+	relax.apply(pose)
+	#Save result
+	pose.dump_pdb('DeNovo.pdb')
+	os.system('rm Backbone.pdb')
 
 def GAN():
 	pass
@@ -721,7 +736,6 @@ def GAN():
 #GAN()
 DrawPDB(line)
 Design.Whole('DeNovo.pdb')
-time.sleep(30)
 Design.Pack('DesignedWhole.pdb')
 os.system('rm DesignedWhole.pdb')
 Fragments('Designed.pdb')
