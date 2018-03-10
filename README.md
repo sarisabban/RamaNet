@@ -5,7 +5,7 @@ Preforms De Novo Design using Machine Learning and PyRosetta to generates a nove
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. Use the following command (in GNU/Linux) to install all necessary programs and python modules for this script to run successfully:
 
-`sudo apt update && sudo apt full-upgrade && sudo apt install python3-pip DSSP gnuplot && sudo pip3 install biopython bs4 tqdm pandas numpy keras matplotlib tensorflow scipy `
+`sudo apt update && sudo apt full-upgrade && sudo apt install python3-pip dssp gnuplot python-biopython python-pandas python-numpy python-matplotlib python-beautifulsoup4 python-scipy python-tensorflow python-tqdm && sudo pip3 install keras`
 
 ## Description:
 This is a script that uses Machine Learning and PyRosetta to preform De Novo Protein Design (from the beginning) i.e. develop and design a synthetic protein structure totally computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits this topology, then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragment files in preparation for an Abinitio fold simulation. The Abinitio script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the Abinitio fold simulation might go (idealy you want an average RMSD < 2Å).
