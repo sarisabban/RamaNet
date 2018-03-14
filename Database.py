@@ -278,7 +278,7 @@ def Rg(directory , RGcutoff):
 
 def DatasetR(directory):
 	''' Get the secondary structures and distances '''
-	''' Generates a the data.csv with each amino acid's secondary strucure and 10 distances between the first amino acid's CA atom and others for each protein in a directory '''
+	''' Generates a the dataR.csv with each amino acid's secondary strucure and 10 distances between the first amino acid's CA atom and others for each protein in a directory '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
@@ -337,8 +337,8 @@ def DatasetR(directory):
 	os.rename(directory + '/dataR.csv' , 'dataR.csv')
 
 def DatasetCA(directory):
-	''' Get the each residue's CA atom's XYZ coordinates '''
-	''' Generates a the data.csv with the XYZ coordinates of the CA atom for each amino acid '''
+	''' Get each residue's CA atom's XYZ coordinates '''
+	''' Generates a the dataCA.csv with the XYZ coordinates of the CA atom for each amino acid '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
@@ -375,6 +375,24 @@ def DatasetCA(directory):
 		count += 1
 	os.chdir(current)
 	os.rename(directory + '/dataCA.csv' , 'dataCA.csv')
+
+def DatasetPS(directory):
+	''' Get each residue's phi and psi angles '''
+	''' Generates a the dataPS.csv with the XYZ coordinates of the CA atom for each amino acid '''
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + "Getting the psi and psi angles" + '\x1b[0m')
+	data = open('dataCA.csv' , 'a')
+	data.write(';PDB_ID;phi_1;psi_1;phi_2;psi_2;phi_3;psi_3;phi_4;psi_4;phi_5;psi_5;phi_6;psi_6;phi_7;psi_7;phi_8;psi_8;phi_9;psi_9;phi_10;psi_10;phi_11;psi_11;phi_12;psi_12;phi_13;psi_13;phi_14;psi_14;phi_15;psi_15;phi_16;psi_16;phi_17;psi_17;phi_18;psi_18;phi_19;psi_19;phi_20;psi_20;phi_21;psi_21;phi_22;psi_22;phi_23;psi_23;phi_24;psi_24;phi_25;psi_25;phi_26;psi_26;phi_27;psi_27;phi_28;psi_28;phi_29;psi_29;phi_30;psi_30;phi_31;psi_31;phi_32;psi_32;phi_33;psi_33;phi_34;psi_34;phi_35;psi_35;phi_36;psi_36;phi_37;psi_37;phi_38;psi_38;phi_39;psi_39;phi_40;psi_40;phi_41;psi_41;phi_42;psi_42;phi_43;psi_43;phi_44;psi_44;phi_45;psi_45;phi_46;psi_46;phi_47;psi_47;phi_48;psi_48;phi_49;psi_49;phi_50;psi_50;phi_51;psi_51;phi_52;psi_52;phi_53;psi_53;phi_54;psi_54;phi_55;psi_55;phi_56;psi_56;phi_57;psi_57;phi_58;psi_58;phi_59;psi_59;phi_60;psi_60;phi_61;psi_61;phi_62;psi_62;phi_63;psi_63;phi_64;psi_64;phi_65;psi_65;phi_66;psi_66;phi_67;psi_67;phi_68;psi_68;phi_69;psi_69;phi_70;psi_70;phi_71;psi_71;phi_72;psi_72;phi_73;psi_73;phi_74;psi_74;phi_75;psi_75;phi_76;psi_76;phi_77;psi_77;phi_78;psi_78;phi_79;psi_79;phi_80;psi_80;phi_81;psi_81;phi_82;psi_82;phi_83;psi_83;phi_84;psi_84;phi_85;psi_85;phi_86;psi_86;phi_87;psi_87;phi_88;psi_88;phi_89;psi_89;phi_90;psi_90;phi_91;psi_91;phi_92;psi_92;phi_93;psi_93;phi_94;psi_94;phi_95;psi_95;phi_96;psi_96;phi_97;psi_97;phi_98;psi_98;phi_99;psi_99;phi_100;psi_100;phi_101;psi_101;phi_102;psi_102;phi_103;psi_103;phi_104;psi_104;phi_105;psi_105;phi_106;psi_106;phi_107;psi_107;phi_108;psi_108;phi_109;psi_109;phi_110;psi_110;phi_111;psi_111;phi_112;psi_112;phi_113;psi_113;phi_114;psi_114;phi_115;psi_115;phi_116;psi_116;phi_117;psi_117;phi_118;psi_118;phi_119;psi_119;phi_120;psi_120;phi_121;psi_121;phi_122;psi_122;phi_123;psi_123;phi_124;psi_124;phi_125;psi_125;phi_126;psi_126;phi_127;psi_127;phi_128;psi_128;phi_129;psi_129;phi_130;psi_130;phi_131;psi_131;phi_132;psi_132;phi_133;psi_133;phi_134;psi_134;phi_135;psi_135;phi_136;psi_136;phi_137;psi_137;phi_138;psi_138;phi_139;psi_139;phi_140;psi_140;phi_141;psi_141;phi_142;psi_142;phi_143;psi_143;phi_144;psi_144;phi_145;psi_145;phi_146;psi_146;phi_147;psi_147;phi_148;psi_148;phi_149;psi_149;phi_150;psi_150\n')
+	data.close()
+	count = 1
+	for TheFile in tqdm.tqdm(pdbfilelist):
+
+
+
+
+
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
@@ -390,4 +408,5 @@ Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to eac
 
 #Protocol to extract specific information from isolated structures
 DatasetR('PDBDatabase')			# 11. Get the secondary structures and distances
-DatasetCA('PDBDatabase')		# 12. Get the each residue's CA atom's XYZ coordinates
+DatasetCA('PDBDatabase')		# 12. Get each residue's CA atom's XYZ coordinates
+DatasetPS('PDBDatabase')		# 13. Get each residue's phi and psi angles
