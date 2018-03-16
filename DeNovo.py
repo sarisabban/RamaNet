@@ -144,7 +144,7 @@ class Design():
 			MC.set_scorefxn(scorefxn)								#Set score function
 			MC.set_maxtrials(10)									#Set number of monte carlo loops
 			MC.set_temperature(1)									#Set temperature
-			MC.set_preapply(True)									#To apply Boltzmann accept/reject to all applications of the mover (always use False)
+			MC.set_preapply(False)									#To apply Boltzmann accept/reject to all applications of the mover (always use False)
 			MC.set_drift(True)									#Make current pose = next iteration pose
 			MC.set_sampletype('high')								#Move monte carlo to higher filter score
 			MC.add_filter(filters , False , 1.0 , 'high' , True)					#Add a filter (Filter Type , Adaptive , Temperature , Sample Type , Rank By)
