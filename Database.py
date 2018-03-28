@@ -446,7 +446,6 @@ def DatasetPS(directory):
 		data.write(str(count) + ';' + TheFile + ';' + AngLine + '\n')
 		data.close()
 		count += 1
-
 def DatasetPSOC(directory):
 	''' Get each residue's phi, psi, and omega angles as well as CA atom constraints (uses the PyRosetta library) '''
 	''' Generates a the dataPSOC.csv with the phi, psi, and omega angles as well as CA atom constraints for each amino acid '''
@@ -459,7 +458,9 @@ def DatasetPSOC(directory):
 	data.close()
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		pose = pose_from_pdb(TheFile)
+		cleanATOM(TheFile)
+		TheFile2 = TheFile.split('.')
+		pose = pose_from_pdb('{}.clean.pdb'.format(TheFile2[0]))
 		size = len(pose)
 		phi = list()
 		psi = list()
@@ -505,6 +506,7 @@ def DatasetPSOC(directory):
 		data.write(str(count) + ';' + TheFile + ';' + AngLine + '\n')
 		data.close()
 		count += 1
+	os.system('mv dataPSOC.csv {}'.format(current))
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
