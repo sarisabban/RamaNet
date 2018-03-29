@@ -2,6 +2,7 @@
 
 import os , math , gzip , Bio.PDB , Bio.pairwise2 , tqdm
 from pyrosetta import *
+from pyrosetta.toolbox import cleanATOM
 init()
 
 def Database(TempDIR , FinalDIR):
@@ -469,9 +470,18 @@ def DatasetPSOC(directory):
 		omg = list()
 		cst = list()
 		for aa in range(size):
-			phi.append(pose.phi(aa + 1))
-			psi.append(pose.psi(aa + 1))
-			omg.append(pose.omega(aa + 1))
+			p = pose.phi(aa + 1)
+			if p < 0:
+				p = p + 360
+			phi.append(p)
+			s = pose.psi(aa + 1)
+			if s < 0:
+				s = s + 360
+			psi.append(s)
+			o = pose.omega(aa + 1)
+			if o < 0:
+				o = o + 360
+			omg.append(o)
 		structure = Bio.PDB.PDBParser().get_structure('X' , TheFile)
 		dssp = Bio.PDB.DSSP(structure[0] , TheFile , acc_array = 'Wilke')
 		for aa in dssp:
@@ -493,7 +503,7 @@ def DatasetPSOC(directory):
 				pass
 		angles = list()
 		for P , S , O , C in zip(phi , psi , omg , cst):
-			angles.append(str(P) + ';' + str(S) + ';' + str(O) + ';' + str(C))
+			angles.append(str(round(P , 3)) + ';' + str(round(S , 3)) + ';' + str(round(O , 3)) + ';' + str(round(C , 3)))
 		Angles = ';'.join(angles)
 		if len(angles) >= 150:
 			AngLine = Angles
@@ -504,8 +514,9 @@ def DatasetPSOC(directory):
 				zeros.append('0.0;0.0;0.0;0.0')
 			Zeros = ';'.join(zeros)
 			AngLine = Angles + ';' + Zeros
+		TheLine = str(count) + ';' + TheFile + ';' + AngLine + '\n'
 		data = open('dataPSOC.csv' , 'a')
-		data.write(str(count) + ';' + TheFile + ';' + AngLine + '\n')
+		data.write(TheLine)
 		data.close()
 		count += 1
 	os.system('mv dataPSOC.csv {}'.format(current))
