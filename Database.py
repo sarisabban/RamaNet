@@ -447,6 +447,7 @@ def DatasetPS(directory):
 		data.write(str(count) + ';' + TheFile + ';' + AngLine + '\n')
 		data.close()
 		count += 1
+		
 def DatasetPSOC(directory):
 	''' Get each residue's phi, psi, and omega angles as well as CA atom constraints (uses the PyRosetta library) '''
 	''' Generates a the dataPSOC.csv with the phi, psi, and omega angles as well as CA atom constraints for each amino acid '''
