@@ -2,7 +2,7 @@
 
 import os , math , gzip , Bio.PDB , Bio.pairwise2 , tqdm
 from pyrosetta import *
-from pyrosetta.toolbox import cleanATOM
+from pyrosetta.toolbox import *
 init()
 
 def Database(TempDIR , FinalDIR):
@@ -461,7 +461,7 @@ def DatasetPSOC(directory):
 	data.close()
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		cleanATOM(TheFile)
+		pyrosetta.toolbox.cleaning.cleanATOM(TheFile)
 		TheFile2 = TheFile.split('.')
 		pose = pose_from_pdb('{}.clean.pdb'.format(TheFile2[0]))
 		size = len(pose)
