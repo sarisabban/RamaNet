@@ -471,14 +471,17 @@ def DatasetPSOC(directory):
 		cst = list()
 		for aa in range(size):
 			p = pose.phi(aa + 1)
+			#Convert all phi angle values to 0 to 360 (rather than +180 to -180)
 			if p < 0:
 				p = p + 360
 			phi.append(p)
 			s = pose.psi(aa + 1)
+			#Convert all psi angle values to 0 to 360 (rather than +180 to -180)
 			if s < 0:
 				s = s + 360
 			psi.append(s)
 			o = pose.omega(aa + 1)
+			#Convert all omega angle values to 0 to 360 (rather than +180 to -180)
 			if o < 0:
 				o = o + 360
 			omg.append(o)
