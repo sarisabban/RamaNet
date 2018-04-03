@@ -9,7 +9,6 @@ def Database(TempDIR , FinalDIR):
 	''' Downloads the entire PDB database from https://www.wwpdb.org/, moves all files into one directory, then uncompresses all the files '''
 	''' Generates a directory which contains all .PDB structure files '''
 	os.system('rsync -rlpt -v -z --delete --port=33444 rsync.wwpdb.org::ftp/data/structures/divided/pdb/ ./' + TempDIR)
-	os.mkdir(TempDIR)
 	os.mkdir(FinalDIR)
 	filelist = os.listdir(TempDIR)
 	print('\x1b[32m' + 'Download complete' + '\x1b[0m')
