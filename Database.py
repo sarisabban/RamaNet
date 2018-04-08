@@ -535,58 +535,60 @@ def DatasetPSC(directory):
 	data.close()
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
-		dssp = Bio.PDB.DSSP(structure[0] , TheFile , acc_array = 'Wilke')
-		for aa in dssp:
-			length = aa[0]
-		phi = list()
-		psi = list()
-		cst = list()
-		for aa in dssp:
-			#Convert all phi angle values to 0 to 360 (rather than +180 to -180)
-			p = aa[4]
-			if p < 0:
-				p = p + 360
-			phi.append(p)
-			#Convert all psi angle values to 0 to 360 (rather than +180 to -180)
-			s = aa[5]
-			if s < 0:
-				s = s + 360
-			psi.append(s)
-		ppb = Bio.PDB.Polypeptide.PPBuilder()
-		Type = ppb.build_peptides(structure , aa_only = False)
-		model = Type
-		chain = model[0]
-		cst.append(0.0)
-		for aa in range(1 , length + 1):
-			try:
-				residue1 = chain[0]
-				residue2 = chain[aa]
-				atom1 = residue1['CA']
-				atom2 = residue2['CA']
-				cst.append(atom1 - atom2)
-			except:
-				pass
-		angles = list()
-		for P , S , C in zip(phi , psi , cst):
-			angles.append(str(round(P , 3)) + ';' + str(round(S , 3)) + ';' + str(round(C , 3)))
-		Angles = ';'.join(angles)
-		if len(angles) >= 150:
-			AngLine = Angles
-		else:
-			addition = 150 - len(angles)
-			zeros = list()
-			for adds in range(addition):
-				zeros.append('0.0;0.0;0.0')
-			Zeros = ';'.join(zeros)
-			AngLine = Angles + ';' + Zeros
-		TheLine = str(count) + ';' + TheFile + ';' + AngLine + '\n'
-		data = open('dataPSC.csv' , 'a')
-		data.write(TheLine)
-		data.close()
-		count += 1
-	os.system('mv dataPSC.csv {}'.format(current))
-
+		try:
+			structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
+			dssp = Bio.PDB.DSSP(structure[0] , TheFile , acc_array = 'Wilke')
+			for aa in dssp:
+				length = aa[0]
+			phi = list()
+			psi = list()
+			cst = list()
+			for aa in dssp:
+				#Convert all phi angle values to 0 to 360 (rather than +180 to -180)
+				p = aa[4]
+				if p < 0:
+					p = p + 360
+				phi.append(p)
+				#Convert all psi angle values to 0 to 360 (rather than +180 to -180)
+				s = aa[5]
+				if s < 0:
+					s = s + 360
+				psi.append(s)
+			ppb = Bio.PDB.Polypeptide.PPBuilder()
+			Type = ppb.build_peptides(structure , aa_only = False)
+			model = Type
+			chain = model[0]
+			cst.append(0.0)
+			for aa in range(1 , length + 1):
+				try:
+					residue1 = chain[0]
+					residue2 = chain[aa]
+					atom1 = residue1['CA']
+					atom2 = residue2['CA']
+					cst.append(atom1 - atom2)
+				except:
+					pass
+			angles = list()
+			for P , S , C in zip(phi , psi , cst):
+				angles.append(str(round(P , 3)) + ';' + str(round(S , 3)) + ';' + str(round(C , 3)))
+			Angles = ';'.join(angles)
+			if len(angles) >= 150:
+				AngLine = Angles
+			else:
+				addition = 150 - len(angles)
+				zeros = list()
+				for adds in range(addition):
+					zeros.append('0.0;0.0;0.0')
+				Zeros = ';'.join(zeros)
+				AngLine = Angles + ';' + Zeros
+			TheLine = str(count) + ';' + TheFile + ';' + AngLine + '\n'
+			data = open('dataPSC.csv' , 'a')
+			data.write(TheLine)
+			data.close()
+			count += 1
+		except Exception as Error:
+			print(Error)
+		os.system('mv dataPSC.csv {}'.format(current))
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
