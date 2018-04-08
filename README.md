@@ -19,9 +19,9 @@ The script will generate 1 structure. It is advised to run this script in an arr
 
 This script will result in 1 file:
 
-* dataPSOC.csv
+* dataPSC.csv
 
-Which stands for dataset of Phi pSi Omega and Constraints. The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, and with an Rg value of less than 15. The script results in a dataset with the first column as the training example number, then the name of the PDB file, then the angles *Phi*, *Psi*, and *Omega*, then the distance between the first CA atom and subsequence CA atoms (used as *constraints*). *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occure, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file.
+Which stands for dataset of Phi pSi and Constraints. The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, and with an Rg value of less than 15. The script results in a dataset with the first column as the training example number, then the PDB ID of the file, then the angles *Phi* and *Psi*, then the distance between the first CA atom and subsequence CA atoms (used as *constraints*). *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occure, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file. There are approximately 5100+ examples in the dataset. 
 
 You can then use the following command to train the General Adverserial Neural Netowork on the dataset.
 
