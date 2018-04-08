@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 import os , math , gzip , Bio.PDB , Bio.pairwise2 , tqdm
-from pyrosetta import *
-from pyrosetta.toolbox import *
-init()
+#from pyrosetta import *
+#from pyrosetta.toolbox import *
+#init()
 
 def Database(TempDIR , FinalDIR):
 	''' Downloads the entire PDB database from https://www.wwpdb.org/, moves all files into one directory, then uncompresses all the files '''
@@ -522,6 +522,71 @@ def DatasetPSOC(directory):
 		data.close()
 		count += 1
 	os.system('mv dataPSOC.csv {}'.format(current))
+
+def DatasetPSC(directory):
+	''' Get each residue's phi and psi angles as well as CA atom constraints (uses the PyRosetta library) '''
+	''' Generates a the dataPSC.csv with the phi and psi angles as well as CA atom constraints for each amino acid '''
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + "Getting the psi, psi, and omega angles and CA atom constraints" + '\x1b[0m')
+	data = open('dataPSC.csv' , 'a')
+	data.write(';PDB_ID;phi_1;psi_1;cst_1;phi_2;psi_2;cst_2;phi_3;psi_3;cst_3;phi_4;psi_4;cst_4;phi_5;psi_5;cst_5;phi_6;psi_6;cst_6;phi_7;psi_7;cst_7;phi_8;psi_8;cst_8;phi_9;psi_9;cst_9;phi_10;psi_10;cst_10;phi_11;psi_11;cst_11;phi_12;psi_12;cst_12;phi_13;psi_13;cst_13;phi_14;psi_14;cst_14;phi_15;psi_15;cst_15;phi_16;psi_16;cst_16;phi_17;psi_17;cst_17;phi_18;psi_18;cst_18;phi_19;psi_19;cst_19;phi_20;psi_20;cst_20;phi_21;psi_21;cst_21;phi_22;psi_22;cst_22;phi_23;psi_23;cst_23;phi_24;psi_24;cst_24;phi_25;psi_25;cst_25;phi_26;psi_26;cst_26;phi_27;psi_27;cst_27;phi_28;psi_28;cst_28;phi_29;psi_29;cst_29;phi_30;psi_30;cst_30;phi_31;psi_31;cst_31;phi_32;psi_32;cst_32;phi_33;psi_33;cst_33;phi_34;psi_34;cst_34;phi_35;psi_35;cst_35;phi_36;psi_36;cst_36;phi_37;psi_37;cst_37;phi_38;psi_38;cst_38;phi_39;psi_39;cst_39;phi_40;psi_40;cst_40;phi_41;psi_41;cst_41;phi_42;psi_42;cst_42;phi_43;psi_43;cst_43;phi_44;psi_44;cst_44;phi_45;psi_45;cst_45;phi_46;psi_46;cst_46;phi_47;psi_47;cst_47;phi_48;psi_48;cst_48;phi_49;psi_49;cst_49;phi_50;psi_50;cst_50;phi_51;psi_51;cst_51;phi_52;psi_52;cst_52;phi_53;psi_53;cst_53;phi_54;psi_54;cst_54;phi_55;psi_55;cst_55;phi_56;psi_56;cst_56;phi_57;psi_57;cst_57;phi_58;psi_58;cst_58;phi_59;psi_59;cst_59;phi_60;psi_60;cst_60;phi_61;psi_61;cst_61;phi_62;psi_62;cst_62;phi_63;psi_63;cst_63;phi_64;psi_64;cst_64;phi_65;psi_65;cst_65;phi_66;psi_66;cst_66;phi_67;psi_67;cst_67;phi_68;psi_68;cst_68;phi_69;psi_69;cst_69;phi_70;psi_70;cst_70;phi_71;psi_71;cst_71;phi_72;psi_72;cst_72;phi_73;psi_73;cst_73;phi_74;psi_74;cst_74;phi_75;psi_75;cst_75;phi_76;psi_76;cst_76;phi_77;psi_77;cst_77;phi_78;psi_78;cst_78;phi_79;psi_79;cst_79;phi_80;psi_80;cst_80;phi_81;psi_81;cst_81;phi_82;psi_82;cst_82;phi_83;psi_83;cst_83;phi_84;psi_84;cst_84;phi_85;psi_85;cst_85;phi_86;psi_86;cst_86;phi_87;psi_87;cst_87;phi_88;psi_88;cst_88;phi_89;psi_89;cst_89;phi_90;psi_90;cst_90;phi_91;psi_91;cst_91;phi_92;psi_92;cst_92;phi_93;psi_93;cst_93;phi_94;psi_94;cst_94;phi_95;psi_95;cst_95;phi_96;psi_96;cst_96;phi_97;psi_97;cst_97;phi_98;psi_98;cst_98;phi_99;psi_99;cst_99;phi_100;psi_100;cst_100;phi_101;psi_101;cst_101;phi_102;psi_102;cst_102;phi_103;psi_103;cst_103;phi_104;psi_104;cst_104;phi_105;psi_105;cst_105;phi_106;psi_106;cst_106;phi_107;psi_107;cst_107;phi_108;psi_108;cst_108;phi_109;psi_109;cst_109;phi_110;psi_110;cst_110;phi_111;psi_111;cst_111;phi_112;psi_112;cst_112;phi_113;psi_113;cst_113;phi_114;psi_114;cst_114;phi_115;psi_115;cst_115;phi_116;psi_116;cst_116;phi_117;psi_117;cst_117;phi_118;psi_118;cst_118;phi_119;psi_119;cst_119;phi_120;psi_120;cst_120;phi_121;psi_121;cst_121;phi_122;psi_122;cst_122;phi_123;psi_123;cst_123;phi_124;psi_124;cst_124;phi_125;psi_125;cst_125;phi_126;psi_126;cst_126;phi_127;psi_127;cst_127;phi_128;psi_128;cst_128;phi_129;psi_129;cst_129;phi_130;psi_130;cst_130;phi_131;psi_131;cst_131;phi_132;psi_132;cst_132;phi_133;psi_133;cst_133;phi_134;psi_134;cst_134;phi_135;psi_135;cst_135;phi_136;psi_136;cst_136;phi_137;psi_137;cst_137;phi_138;psi_138;cst_138;phi_139;psi_139;cst_139;phi_140;psi_140;cst_140;phi_141;psi_141;cst_141;phi_142;psi_142;cst_142;phi_143;psi_143;cst_143;phi_144;psi_144;cst_144;phi_145;psi_145;cst_145;phi_146;psi_146;cst_146;phi_147;psi_147;cst_147;phi_148;psi_148;cst_148;phi_149;psi_149;cst_149;phi_150;psi_150;cst_150\n')
+	data.close()
+	count = 1
+	for TheFile in tqdm.tqdm(pdbfilelist):
+		structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
+		dssp = Bio.PDB.DSSP(structure[0] , TheFile , acc_array = 'Wilke')
+		for aa in dssp:
+			length = aa[0]
+		phi = list()
+		psi = list()
+		cst = list()
+		for aa in dssp:
+			#Convert all phi angle values to 0 to 360 (rather than +180 to -180)
+			p = aa[4]
+			if p < 0:
+				p = p + 360
+			phi.append(p)
+			#Convert all psi angle values to 0 to 360 (rather than +180 to -180)
+			s = aa[5]
+			if s < 0:
+				s = s + 360
+			psi.append(s)
+		ppb = Bio.PDB.Polypeptide.PPBuilder()
+		Type = ppb.build_peptides(structure , aa_only = False)
+		model = Type
+		chain = model[0]
+		cst.append(0.0)
+		for aa in range(1 , length + 1):
+			try:
+				residue1 = chain[0]
+				residue2 = chain[aa]
+				atom1 = residue1['CA']
+				atom2 = residue2['CA']
+				cst.append(atom1 - atom2)
+			except:
+				pass
+		angles = list()
+		for P , S , C in zip(phi , psi , cst):
+			angles.append(str(round(P , 3)) + ';' + str(round(S , 3)) + ';' + str(round(C , 3)))
+		Angles = ';'.join(angles)
+		if len(angles) >= 150:
+			AngLine = Angles
+		else:
+			addition = 150 - len(angles)
+			zeros = list()
+			for adds in range(addition):
+				zeros.append('0.0;0.0;0.0')
+			Zeros = ';'.join(zeros)
+			AngLine = Angles + ';' + Zeros
+		TheLine = str(count) + ';' + TheFile + ';' + AngLine + '\n'
+		data = open('dataPSC.csv' , 'a')
+		data.write(TheLine)
+		data.close()
+		count += 1
+	os.system('mv dataPSC.csv {}'.format(current))
+
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
@@ -538,6 +603,7 @@ Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to eac
 #Protocol to extract specific information from isolated structures
 #DatasetR('PDBDatabase')		# 11. Get the secondary structures and distances
 #DatasetCA('PDBDatabase')		# 12. Get each residue's CA atom's XYZ coordinates
-#DatasetPS('PDBDatabase')		# 14. Get each residue's phi and psi angles
 #DatasetPSO('PDBDatabase')		# 13. Get each residue's phi, psi, and omega angles
-DatasetPSOC('PDBDatabase')		# 15. Get each residue's phi, psi, and omega angles as well as CA atom constraints
+#DatasetPS('PDBDatabase')		# 14. Get each residue's phi and psi angles
+#DatasetPSOC('PDBDatabase')		# 15. Get each residue's phi, psi, and omega angles as well as CA atom constraints
+DatasetPSC('PDBDatabase')		# 16. Get each residue's phi and psi angles as well as CA atom constraints

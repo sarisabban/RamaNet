@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os , re , time , datetime , requests , urllib.request , bs4 , Bio.PDB
+import os , re , time , datetime , urllib.request , bs4 , Bio.PDB #, requests
 from pyrosetta import *
 init()
 #--------------------------------------------------------------------------------------------------------------------------------------
@@ -353,11 +353,79 @@ def FoldPDB_PSOC(line):
 	pose.dump_pdb('Backbone.pdb')
 	os.remove('constraints.cst')
 
+def FoldPDB_PSC(line):
+	''' Fold a primary structure using the phi and psi torsion angles as well as the CA atom constraints '''
+	''' Generates the Backbone.pdb file '''
+	size = int(len(line.split(';')) / 3)
+	Vs = list()
+	for numb in range(size):
+		Vs.append('V')
+	sequence = ''.join(Vs)
+	pose = pose_from_sequence(sequence)
+	#Isolate each angle and constraint
+	tick = 0
+	PHI = list()
+	PSI = list()
+	CST = list()
+	for angle in line.split(';'):
+		if tick == 0:
+			PHI.append(angle)
+			tick = 1
+		elif tick == 1:
+			PSI.append(angle)
+			tick = 2
+		else:
+			CST.append(angle)
+			tick = 0
+	count = 1
+	#Move amino acids angles
+	for P , S in zip(PHI , PSI):
+		pose.set_phi(count , float(P))
+		pose.set_psi(count , float(S))
+		count += 1
+	atom = 1
+	#Write constraints file
+	for cst in CST:
+		line = 'AtomPair CA 1 CA ' + str(atom) +' GAUSSIANFUNC '+ str(cst) +' 1.0\n'
+		thefile = open('constraints.cst' , 'a')
+		thefile.write(line)
+		thefile.close()
+		atom += 1
+	#Add constraints option to pose
+	constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
+	constraints.constraint_file('constraints.cst')
+	constraints.add_constraints(True)
+	constraints.apply(pose)
+	#Score function with weight on only atom_pair_constraint
+	scorefxn = ScoreFunction()
+	scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.atom_pair_constraint , 1.0)
+	#Constraint relax to bring atoms together
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	relax.constrain_relax_to_start_coords(True)
+	relax.constrain_coords(True)
+	relax.apply(pose)
+	#Normal FastRelax with constraints
+	scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('ref2015_cst')
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	relax.constrain_relax_to_start_coords(True)
+	relax.constrain_coords(True)
+	relax.apply(pose)
+	#Normal FastRelax without constraints
+	scorefxn = get_fa_scorefxn()
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relax.set_scorefxn(scorefxn)
+	relax.apply(pose)
+	pose.dump_pdb('Backbone.pdb')
+	os.remove('constraints.cst')
+
 def GAN():
 	pass
 #--------------------------------------------------------------------------------------------------------------------------------------
 #GAN()
-FoldPDB_PSOC(line)
+FoldPDB_PSC(line)
+#FoldPDB_PSOC(line)
 Design.Whole('Backbone.pdb')
 Design.Pack('DesignedWhole.pdb')
 os.remove('Backbone.pdb')
