@@ -588,7 +588,7 @@ def DatasetPSC(directory):
 			count += 1
 		except Exception as Error:
 			print(Error)
-		os.system('mv dataPSC.csv {}'.format(current))
+	os.system('mv dataPSC.csv {}'.format(current))
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
