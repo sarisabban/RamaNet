@@ -6,8 +6,8 @@ init()
 #--------------------------------------------------------------------------------------------------------------------------------------
 #Functions
 def SASA(pose):
-	''' Calculates the different layers (Surface, Boundery, Core) of a structure according its SASA (solvent-accessible surface area) '''
-	''' Returns three lists Surface amino acids = [0] , Boundery amino acids = [1] , Core amino acids = [2] '''
+	''' Calculates the different layers (Surface, Boundary, Core) of a structure according its SASA (solvent-accessible surface area) '''
+	''' Returns three lists Surface amino acids = [0] , Boundary amino acids = [1] , Core amino acids = [2] '''
 	#Temporary generate a .pdb file of the pose to isolate the layers since it is not yet possible to do that using a Rosetta pose, this temporary .pdb file will be deleted after the layers are found
 	pose.dump_pdb('ToDesign.pdb')
 	#Standard script to setup biopython's DSSP to calculate SASA using Wilke constants
@@ -45,7 +45,7 @@ def SASA(pose):
 	#Boundry:	Helix or Sheet: 15 < SASA < 60		Loop: 25 < SASA < 40
 	#Core:		Helix or Sheet: SASA =< 15		Loop: SASA =< 25	
 	surface = list()
-	boundery = list()
+	boundary = list()
 	core = list()
 	count = 0
 	for x , y in lis:
@@ -53,23 +53,23 @@ def SASA(pose):
 		if y <= 25 and (x == '-' or x == 'T' or x == 'S'):		#Loop (DSSP code is - or T or S)
 			core.append(count)
 		elif 25 < y < 40 and (x == '-' or x == 'T' or x == 'S'):	#Loop (DSSP code is - or T or S)
-			boundery.append(count)
+			boundary.append(count)
 		elif y >= 40 and (x == '-' or x == 'T' or x == 'S'):		#Loop (DSSP code is - or T or S)
 			surface.append(count)
 		elif y <= 15 and (x == 'G' or x == 'H' or x == 'I'):		#Helix (DSSP code is G or H or I)
 			core.append(count)
 		elif 15 < y < 60 and (x == 'G' or x == 'H' or x == 'I'):	#Helix (DSSP code is G or H or I)
-			boundery.append(count)
+			boundary.append(count)
 		elif y >= 60 and (x == 'G' or x == 'H' or x == 'I'):		#Helix (DSSP code is G or H or I)
 			surface.append(count)
 		elif y <= 15 and (x == 'B' or x == 'E'):			#Sheet (DSSP code is B or E)
 			core.append(count)
 		elif 15 < y < 60 and (x == 'B' or x == 'E'):			#Sheet (DSSP code is B or E)
-			boundery.append(count)
+			boundary.append(count)
 		elif y >= 60 and (x == 'B' or x == 'E'):			#Sheet (DSSP code is B or E)
 			surface.append(count)	
 	os.remove('ToDesign.pdb')						#Keep working directory clean
-	return(surface , boundery , core)					#Return values [0] = Motif_From [1] = Motif_To
+	return(surface , boundary , core)					#Return values [0] = Motif_From [1] = Motif_To
 
 class Design():
 	def Whole(Pose):
