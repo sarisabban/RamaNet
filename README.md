@@ -31,7 +31,11 @@ But we provide a trained neural network within the DeNovo.py script, thus you ca
 
 2. Use the following command to preform the *De Novo* protein design:
 
-`python3 DeNovo.py`
+`python3 DeNovo2.py`
+
+DeNovo1.py works with PyRosetta4 python 3.6 release 176 and previous.
+
+DeNovo2.py works with PyRosetta4 python 3.6 release 177 onwards.
 
 This script will result in 7 files:
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**DeNovo.pdb**)
