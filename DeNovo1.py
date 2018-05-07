@@ -129,7 +129,7 @@ class Design():
 			task = pyrosetta.rosetta.core.pack.task.TaskFactory()					#Setup the TaskFactory
 			task.push_back(read)									#Add the Resfile to the TaskFactory
 			movemap = MoveMap()									#Setup the MoveMap
-			movemap.set_bb(True)									#Do not change the phi and psi BackBone angles
+			movemap.set_bb(True)									#Change the phi and psi BackBone angles
 			movemap.set_chi(True)									#Change the chi Side Chain angle
 			mover = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()			#Call the FastDesign Mover
 			mover.set_task_factory(task)								#Add the TaskFactory to it
