@@ -203,6 +203,7 @@ def Fragments(Pose):
 	fasta = open('structure.fasta' , 'w')
 	fasta.write(sequence)
 	fasta.close()
+	time.sleep(1)
 	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
 	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
 	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
