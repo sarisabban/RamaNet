@@ -315,7 +315,7 @@ class RosettaDesign():
 		print('Relaxed Design Score:\t{}'.format(score3_of_design_after_relax))
 		RosettaDesign.BLAST(self , filename , 'structure.pdb')
 
-def Fragments(Pose):
+def Fragments(filename):
 	'''
 	Submits the pose to the Robetta server
 	(http://www.robetta.org) for fragment generation that are
@@ -329,7 +329,7 @@ def Fragments(Pose):
 	RMSD printed in the plot
 	'''
 	#Make the 3-mer and 9-mer fragment files and the PSIPRED file using the Robetta server
-	pose = pose_from_pdb(Pose)
+	pose = pose_from_pdb(filename)
 	sequence = pose.sequence()
 	#Post
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
