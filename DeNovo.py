@@ -8,6 +8,7 @@ import urllib.request
 import bs4
 import Bio.PDB
 import requests
+from Bio import pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
