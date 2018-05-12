@@ -461,10 +461,10 @@ def Fragments(filename):
 	set key off\n
 	set boxwidth 0.5\n
 	set style fill solid\n
-	set label 'Average RMSD = " + str(Average_RMSD) + "' at graph 0.01 , graph 0.95 tc lt 7 font 'curior 12'\n
+	set label 'Average RMSD = {}' at graph 0.01 , graph 0.95 tc lt 7 font 'curior 12'\n
 	plot 'RMSDvsPosition.dat' with boxes\n
 	exit
-	""")
+	""".format(str(Average_RMSD)))
 	gnuplot.close()
 	os.system('gnuplot < gnuplot_sets')
 	os.remove('gnuplot_sets')
