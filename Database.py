@@ -606,7 +606,7 @@ def Seq(directory):
 	for TheFile in tqdm.tqdm(pdbfilelist):
 		structure = Bio.PDB.PDBParser().get_structure('X', TheFile)
 		ppb = Bio.PDB.PPBuilder()
-		seq = ppb.build_peptides(structure)[0].get_sequence()
+		seq = ppb.build_peptides(structure , aa_only = False)[0].get_sequence()
 		TheLine = str(count) + ';' + TheFile + ';' + str(seq) + '\n'
 		data = open('SEQ.csv' , 'a')
 		data.write(TheLine)
