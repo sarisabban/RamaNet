@@ -589,6 +589,66 @@ def DatasetPSC(directory):
 		except Exception as Error:
 			print(Error)
 	os.system('mv dataPSC.csv {}'.format(current))
+
+def Seq(directory):
+	'''
+	Get each protein's sequence
+	Generates a the SEQ.csv dataset file
+	'''
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + "Getting the sequence" + '\x1b[0m')
+	data = open('SEQ.csv' , 'a')
+	data.write(';PDB_ID;Sequence\n')
+	data.close()
+	count = 1
+	for TheFile in tqdm.tqdm(pdbfilelist):
+		structure = Bio.PDB.PDBParser().get_structure('X', TheFile)
+		ppb = Bio.PDB.PPBuilder()
+		seq = ppb.build_peptides(structure)[0].get_sequence()
+		TheLine = str(count) + ';' + TheFile + ';' + str(seq) + '\n'
+		data = open('SEQ.csv' , 'a')
+		data.write(TheLine)
+		data.close()
+		count += 1
+	os.system('mv SEQ.csv {}'.format(current))
+
+def SS(directory):
+	'''
+	Get each residue's secondary structure
+	Generates a the SS.csv dataset file
+	'''
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + "Getting the secondary structures" + '\x1b[0m')
+	data = open('SS.csv' , 'a')
+	data.write(';PDB_ID;Secondary_Structures\n')
+	data.close()
+	count = 1
+	for TheFile in tqdm.tqdm(pdbfilelist):
+		try:
+			structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
+			dssp = Bio.PDB.DSSP(structure[0] , TheFile , acc_array = 'Wilke')
+			SS = list()
+			for res in dssp:
+				ss = res[2]
+				if ss == '-' or ss == 'T' or ss == 'S':		#Loop (DSSP code is - or T or S)
+					SS.append('L')
+				elif ss == 'G' or ss == 'H' or ss == 'I':	#Helix (DSSP code is G or H or I)
+					SS.append('H')
+				elif ss == 'B' or ss == 'E':			#Sheet (DSSP code is B or E)
+					SS.append('S')		
+		except Exception as Error:
+			print(Error)
+		SS = ''.join(SS)
+		TheLine = str(count) + ';' + TheFile + ';' + str(SS) + '\n'
+		data = open('SS.csv' , 'a')
+		data.write(TheLine)
+		data.close()
+		count += 1
+	os.system('mv SS.csv {}'.format(current))
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
@@ -609,3 +669,5 @@ Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to eac
 #DatasetPS('PDBDatabase')		# 14. Get each residue's phi and psi angles
 #DatasetPSOC('PDBDatabase')		# 15. Get each residue's phi, psi, and omega angles as well as CA atom constraints
 DatasetPSC('PDBDatabase')		# 16. Get each residue's phi and psi angles as well as CA atom constraints
+#Seq('PDBDatabase')			# 17 . Get each protein's sequence
+#SS('PDBDatabase')			# 18 . Get each residue's secondary structure
