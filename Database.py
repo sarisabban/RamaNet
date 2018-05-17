@@ -600,14 +600,14 @@ def Fasta(directory):
 	os.chdir(directory)
 	print('\x1b[32m' + "Getting the sequence" + '\x1b[0m')
 	data = open('FASTA.csv' , 'a')
-	data.write(';PDB_ID;Sequence\n')
+	data.write('PDB_ID;Sequence\n')
 	data.close()
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
 		structure = Bio.PDB.PDBParser().get_structure('X', TheFile)
 		ppb = Bio.PDB.PPBuilder()
 		seq = ppb.build_peptides(structure , aa_only = False)[0].get_sequence()
-		TheLine = str(count) + ';' + TheFile + ';' + str(seq) + '\n'
+		TheLine = TheFile + ';' + str(seq) + '\n'
 		data = open('FASTA.csv' , 'a')
 		data.write(TheLine)
 		data.close()
@@ -624,7 +624,7 @@ def SS(directory):
 	os.chdir(directory)
 	print('\x1b[32m' + "Getting the secondary structures" + '\x1b[0m')
 	data = open('SS.csv' , 'a')
-	data.write(';PDB_ID;Secondary_Structures\n')
+	data.write('PDB_ID;Secondary_Structures\n')
 	data.close()
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
@@ -643,7 +643,7 @@ def SS(directory):
 		except Exception as Error:
 			print(Error)
 		SS = ''.join(SS)
-		TheLine = str(count) + ';' + TheFile + ';' + str(SS) + '\n'
+		TheLine = TheFile + ';' + str(SS) + '\n'
 		data = open('SS.csv' , 'a')
 		data.write(TheLine)
 		data.close()
