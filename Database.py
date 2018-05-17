@@ -590,16 +590,16 @@ def DatasetPSC(directory):
 			print(Error)
 	os.system('mv dataPSC.csv {}'.format(current))
 
-def Seq(directory):
+def Fasta(directory):
 	'''
 	Get each protein's sequence
-	Generates a the SEQ.csv dataset file
+	Generates a the FASTA.csv dataset file
 	'''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
 	print('\x1b[32m' + "Getting the sequence" + '\x1b[0m')
-	data = open('SEQ.csv' , 'a')
+	data = open('FASTA.csv' , 'a')
 	data.write(';PDB_ID;Sequence\n')
 	data.close()
 	count = 1
@@ -608,11 +608,11 @@ def Seq(directory):
 		ppb = Bio.PDB.PPBuilder()
 		seq = ppb.build_peptides(structure , aa_only = False)[0].get_sequence()
 		TheLine = str(count) + ';' + TheFile + ';' + str(seq) + '\n'
-		data = open('SEQ.csv' , 'a')
+		data = open('FASTA.csv' , 'a')
 		data.write(TheLine)
 		data.close()
 		count += 1
-	os.system('mv SEQ.csv {}'.format(current))
+	os.system('mv FASTA.csv {}'.format(current))
 
 def SS(directory):
 	'''
