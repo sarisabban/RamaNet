@@ -689,7 +689,7 @@ def GAN():
 		D_loss = round(float(d_loss[0]), 3)
 		D_accu = round(float(d_loss[1]), 3)
 		A_loss = round(float(a_loss[0]), 3)
-		print ('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
+		print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
 
 	#Generate
 	noise = np.random.normal(0.5, 0.5, (1, 100))
