@@ -702,6 +702,11 @@ def GAN():
 	gen = G.predict(noise)
 	gen = gen.reshape([450])
 	gen = np.ndarray.tolist(gen)
+	#Renormalise
+	#https://github.com/hyperopt/hyperopt
+	#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
+	#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
+
 	return(gen)
 	
 def main():
