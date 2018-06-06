@@ -699,7 +699,7 @@ def GAN():
 	return(gen)
 	
 def main():
-	#GAN()
+	line = GAN()
 	FoldPDB_PSC(line)
 	Design.pack_flxbb('Backbone.pdb')
 	os.remove('Backbone.pdb')
