@@ -690,6 +690,12 @@ def GAN():
 		D_accu = round(float(d_loss[1]), 3)
 		A_loss = round(float(a_loss[0]), 3)
 		print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
+		
+	#Save Model
+	#G.save_weights('GAN.h5')
+
+	#Load model and weights
+	#G.load_weights('GAN.h5')
 
 	#Generate
 	noise = np.random.normal(0.5, 0.5, (1, 100))
