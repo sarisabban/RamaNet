@@ -25,13 +25,13 @@ Which stands for dataset of Phi pSi and Constraints. The default parameters for 
 
 You can then use the following command to train the General Adverserial Neural Netowork on the dataset.
 
-`python3 GAN.py`
+`python3 Generate train.py`
 
 But we provide a trained neural network within the DeNovo.py script, thus you can just go ahead and start your work from the next step.
 
 2. Use the following command to preform the *De Novo* protein design:
 
-`python3 DeNovo2.py`
+`python3 Generate.py`
 
 DeNovo1.py works with PyRosetta4 python 3.6 release 176 and previous.
 
