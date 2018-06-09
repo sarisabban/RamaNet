@@ -1,4 +1,4 @@
-# ResottaDeNovo
+# ProtAI
 Preforms De Novo Design using Machine Learning and PyRosetta to generates a novel synthesic protein structure.
 
 ## Requirements:
