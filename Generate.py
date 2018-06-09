@@ -26,77 +26,12 @@ class RosettaDesign():
 	def __init__(self):
 		pass
 
-	def SASA(self , filename):
-		'''
-		Calculates the different layers 
-		(Surface, Boundary, Core) of a structure according
-		its SASA (solvent-accessible surface area)
-		Returns three lists
-		Surface amino acids = [0]
-		Boundary amino acids = [1]
-		Core amino acids = [2]
-		'''
-
-		#Standard script to setup biopython's DSSP to calculate SASA using the Wilke constants
-		parser = Bio.PDB.PDBParser()
-		structure = parser.get_structure('temp' , filename)
-		dssp = Bio.PDB.DSSP(structure[0] , filename , acc_array = 'Wilke')
-		#Loop to get SASA for each amino acid
-		lis = list()
-		count = 0
-		for x in dssp:
-			if x[1]   == 'A' : sasa = 129 * (x[3])
-			elif x[1] == 'V' : sasa = 174 * (x[3])
-			elif x[1] == 'I' : sasa = 197 * (x[3])
-			elif x[1] == 'L' : sasa = 201 * (x[3])
-			elif x[1] == 'M' : sasa = 224 * (x[3])
-			elif x[1] == 'P' : sasa = 159 * (x[3])
-			elif x[1] == 'Y' : sasa = 263 * (x[3])
-			elif x[1] == 'F' : sasa = 240 * (x[3])
-			elif x[1] == 'W' : sasa = 285 * (x[3])
-			elif x[1] == 'R' : sasa = 274 * (x[3])
-			elif x[1] == 'C' : sasa = 167 * (x[3])
-			elif x[1] == 'N' : sasa = 195 * (x[3])
-			elif x[1] == 'Q' : sasa = 225 * (x[3])
-			elif x[1] == 'E' : sasa = 223 * (x[3])
-			elif x[1] == 'G' : sasa = 104 * (x[3])
-			elif x[1] == 'H' : sasa = 224 * (x[3])
-			elif x[1] == 'K' : sasa = 236 * (x[3])
-			elif x[1] == 'S' : sasa = 155 * (x[3])
-			elif x[1] == 'T' : sasa = 172 * (x[3])
-			elif x[1] == 'D' : sasa = 193 * (x[3])
-			lis.append((x[2] , sasa))
-		#Label each amino acid depending on its SASA position according to the parameters highlighted in the paper by (Koga et.al., 2012 - PMID: 23135467). The parameters are as follows:
-		#Surface:	Helix or Sheet: SASA => 60		Loop: SASA => 40
-		#Boundry:	Helix or Sheet: 15 < SASA < 60		Loop: 25 < SASA < 40
-		#Core:		Helix or Sheet: SASA =< 15		Loop: SASA =< 25	
-		surface = list()
-		boundary = list()
-		core = list()
-		count = 0
-		for x , y in lis:
-			count = count + 1
-			if y <= 25 and (x == '-' or x == 'T' or x == 'S'):					#Loop (DSSP code is - or T or S)
-				core.append(count)
-			elif 25 < y < 40 and (x == '-' or x == 'T' or x == 'S'):				#Loop (DSSP code is - or T or S)
-				boundary.append(count)
-			elif y >= 40 and (x == '-' or x == 'T' or x == 'S'):					#Loop (DSSP code is - or T or S)
-				surface.append(count)
-			elif y <= 15 and (x == 'G' or x == 'H' or x == 'I'):					#Helix (DSSP code is G or H or I)
-				core.append(count)
-			elif 15 < y < 60 and (x == 'G' or x == 'H' or x == 'I'):				#Helix (DSSP code is G or H or I)
-				boundary.append(count)
-			elif y >= 60 and (x == 'G' or x == 'H' or x == 'I'):					#Helix (DSSP code is G or H or I)
-				surface.append(count)
-			elif y <= 15 and (x == 'B' or x == 'E'):						#Sheet (DSSP code is B or E)
-				core.append(count)
-			elif 15 < y < 60 and (x == 'B' or x == 'E'):						#Sheet (DSSP code is B or E)
-				boundary.append(count)
-			elif y >= 60 and (x == 'B' or x == 'E'):						#Sheet (DSSP code is B or E)
-				surface.append(count)	
-		return(surface , boundary , core)
-
 	def BLAST(self , filename1 , filename2):
+		'''
+		Performs a BLAST alignment between two sequences and prints
+		the sequences as well as the percentage of sequence
+		similarity
+		'''
 		seq1 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('filename1' , filename1) , aa_only = True)[0].get_sequence()
 		seq2 = Bio.PDB.Polypeptide.PPBuilder().build_peptides(Bio.PDB.PDBParser(QUIET = True).get_structure('filename2' , filename2) , aa_only = True)[0].get_sequence()
 		alignment = pairwise2.align.globalxx(seq1 , seq2)
@@ -107,216 +42,84 @@ class RosettaDesign():
 		print(seq2)
 		print('Sequence Similarity: {}%'.format(percentage))
 
-	def whole_fixbb(self , filename):
+	def fixbb(self , filename , relax_iters , design_iters):
 		'''
-		Applies RosettaDesign to change the whole
-		structure's amino acids (the whole structure all
-		at once) while maintaining the same backbone
+		Performs the RosettaDesign protocol to change a structure's
+		amino acid sequence while maintaining a fixed backbone.
 		Generates the structure.pdb file
 		'''
 		#A - Relax original structure
 		pose = pose_from_pdb(filename)
+		chain = pose.pdb_info().chain(1)
 		scorefxn = get_fa_scorefxn()
-		score1_original_before_relax = scorefxn(pose)							#Measure score before relaxing
 		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
 		relax.set_scorefxn(scorefxn)
-		relax.apply(pose)
-		score2_original_after_relax = scorefxn(pose)							#Measure score after relaxing
-		#B - Preform RosettaDesign for whole structure
-		for inter in range(3):
-			task_pack = standard_packer_task(pose)
-			pack_mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, task_pack)
-			pack_mover.apply(pose)
-			#C - Relax Pose
-			relax.apply(pose)
-		#D - Output Result
-		score3_of_design_after_relax = scorefxn(pose)							#Measure score of designed pose
-		pose.dump_pdb('structure.pdb')									#Export final pose into a .pdb structure file
-		print('---------------------------------------------------------')
-		print('Original Structure Score:\t{}'.format(score1_original_before_relax))
-		print('Relaxed Original Score:\t{}'.format(score2_original_after_relax))
-		print('Relaxed Design Score:\t{}'.format(score3_of_design_after_relax))
-		RosettaDesign.BLAST(self , filename , 'structure.pdb')
-
-	def layer_fixbb(self , filename):
-		'''
-		Applies RosettaDesign to change the whole
-		structure's amino acids (one layer at a time) while
-		maintaining the same backbone. Should be more
-		efficient and faster than the previous Whole method
-		Generates the structure.pdb file
-		'''
-		#A - Relax original structure
-		pose = pose_from_pdb(filename)
-		scorefxn = get_fa_scorefxn()
-		score1_original_before_relax = scorefxn(pose)							#Measure score before relaxing
-		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-		relax.set_scorefxn(scorefxn)
-		relax.apply(pose)
-		score2_original_after_relax = scorefxn(pose)							#Measure score after relaxing
-		#B - Preform RosettaDesign one layer at a time
-		for inter in range(3):
-			#1 - Get SASA Layers
-			sasa = RosettaDesign.SASA(self , filename)
-			surface = sasa[0]
-			boundary = sasa[1]
-			core = sasa[2]
-			#2 - Perform RosettaDesign on each layer
-			#Design core
-			task_pack = standard_packer_task(pose)
-			pack_mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , task_pack)
-			task_pack.temporarily_fix_everything()							#To prevent all amino acids from being designed
-			for AA in core:
-				coreAA = pose.residue(AA).name()
-				if coreAA == 'CYS:disulfide':
-					continue
-				else:
-					task_pack.temporarily_set_pack_residue(AA , True)			#To move only spesific amino acids
-			pack_mover.apply(pose)
-			#Design boundery
-			task_pack = standard_packer_task(pose)
-			pack_mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , task_pack)
-			task_pack.temporarily_fix_everything()							#To prevent all amino acids from being designed
-			for AA in boundary:
-				boundAA = pose.residue(AA).name()
-				if boundAA == 'CYS:disulfide':
-					continue
-				else:
-					task_pack.temporarily_set_pack_residue(AA , True)			#To move only spesific amino acids
-			pack_mover.apply(pose)
-			#Design surface
-			task_pack = standard_packer_task(pose)
-			pack_mover = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , task_pack)
-			task_pack.temporarily_fix_everything()							#To prevent all amino acids from being designed
-			for AA in surface:
-				surfAA = pose.residue(AA).name()
-				if surfAA == 'CYS:disulfide':
-					continue
-				else:
-					task_pack.temporarily_set_pack_residue(AA , True)			#To move only spesific amino acids
-			pack_mover.apply(pose)
-			#3 - Relax Pose
-			relax.apply(pose)
+		Rscore_before = scorefxn(pose)
+		Rpose_work = Pose()
+		Rpose_lowest = Pose()
+		Rscores = []
+		Rscores.append(Rscore_before)
+		for nstruct in range(relax_iters):
+			Rpose_work.assign(pose)
+			relax.apply(Rpose_work)
+			Rscore_after = scorefxn(Rpose_work)
+			Rscores.append(Rscore_after)
+			if Rscore_after < Rscore_before:
+				Rscore_before = Rscore_after
+				Rpose_lowest.assign(Rpose_work)
+			else:
+				continue
+		pose.assign(Rpose_lowest)
+		RFinalScore = scorefxn(pose)
+		#B - Perform fixbb RosettaDesign
+		packtask = standard_packer_task(pose)
+		pack = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn , packtask)
+		backrub = pyrosetta.rosetta.protocols.backrub.BackrubMover()
+		backrub.pivot_residues(pose)
+		GMC = pyrosetta.rosetta.protocols.monte_carlo.GenericMonteCarloMover()
+		GMC.set_mover(backrub)
+		GMC.set_scorefxn(scorefxn)
+		GMC.set_maxtrials(500)
+		GMC.set_temperature(1.0)
+		GMC.set_preapply(False)
+		GMC.set_recover_low(True)
+		mover = pyrosetta.rosetta.protocols.moves.SequenceMover()
+		mover.add_mover(pack)
+		mover.add_mover(GMC)#####<--- problem here not accepting not rejecting moves
+		Dscore_before = 0
+		Dpose_work = Pose()
+		Dpose_lowest = Pose()
+		Dscores = []
+		Dscores.append(Dscore_before)
+		for nstruct in range(design_iters):
+			Dpose_work.assign(pose)
+			mover.apply(Dpose_work)
+			Dscore_after = scorefxn(Dpose_work)
+			Dscores.append(Dscore_after)
+			if Dscore_after < Dscore_before:
+				Dscore_before = Dscore_after
+				Dpose_lowest.assign(Dpose_work)
+			else:
+				continue
+		pose.assign(Dpose_lowest)
+		DFinalScore = scorefxn(pose)
 		#C - Output Result
-		score3_of_design_after_relax = scorefxn(pose)							#Measure score of designed pose
-		pose.dump_pdb('structure.pdb')									#Export final pose into a .pdb structure file
-		print('---------------------------------------------------------')
-		print('Original Structure Score:\t{}'.format(score1_original_before_relax))
-		print('Relaxed Original Score:\t{}'.format(score2_original_after_relax))
-		print('Relaxed Design Score:\t{}'.format(score3_of_design_after_relax))
+		pose.dump_pdb('structure.pdb')
+		#D - Print report
+		print('==================== Result Report ====================')
+		print('Relax Scores:\n' , Rscores)
+		print('Chosen Lowest Score:' , RFinalScore , '\n')
+		print('Design Scores:\n' , Dscores)
+		print('Chosen Lowest Score:' , DFinalScore , '\n')
+		print('BLAST result, compairing the original structure to the designed structure:')
 		RosettaDesign.BLAST(self , filename , 'structure.pdb')
 
-	def pack_fixbb(self , filename):
+	def flxbb(self , filename , relax_iters , design_iters):
 		'''
-		Applies RosettaDesign to change the whole
-		structure's amino acids (one layer at a time as
-		well as designing towards an optimally packed core)
-		while maintaining the same backbone
+		Performs the RosettaDesign protocol to change a structure's
+		amino acid sequence while allowing for a flexible backbone.
 		Generates the structure.pdb file
 		'''
-		#A - Relax original structure
-		pose = pose_from_pdb(filename)
-		scorefxn = get_fa_scorefxn()
-		score1_original_before_relax = scorefxn(pose)							#Measure score before relaxing
-		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-		relax.set_scorefxn(scorefxn)
-		relax.apply(pose)
-		score2_original_after_relax = scorefxn(pose)							#Measure score after relaxing
-		#B - FastRelax protocol										#Uses Generic Monte Carlo with PackStat as a filter to direct FastRelax towards an optimally packed structure core
-		chain = pose.pdb_info().chain(1)								#Identify chain
-		layers = [2 , 1 , 0]										#Layer Identity from SASA Surface = [0] , Boundary = [1] , Core = [2]
-		for identity in layers:										#Loop through each layer
-			#1 - Setup the PackStat filter
-			filters = rosetta.protocols.simple_filters.PackStatFilter()
-			#2 - Identify The Layers
-			sasa = RosettaDesign.SASA(self , filename)						#Re-calculate SASA every time because amino acid position can change from one layer to another during the design phase, therefore make sure to design the layer not the amino acid
-			layer = sasa[identity]									#Changes every iteration to start with Core (sasa[2]) then Boundary (sasa[1]) then Surface (sasa[0])
-			#3 - Generate the resfile								#Will generate a new Resfile for each layer (which is why it is deleted at the end of the loop)
-			Resfile = open('Resfile.resfile' , 'w')
-			Resfile.write('NATAA\n')
-			Resfile.write('start\n')
-			for line in layer:
-				Resfile.write(str(line) + ' ' + chain + ' ALLAA\n')
-			Resfile.close()
-			#4 - Setup the FastRelax mover
-			read = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('Resfile.resfile')	#Call the generated Resfile
-			task = pyrosetta.rosetta.core.pack.task.TaskFactory()					#Setup the TaskFactory
-			task.push_back(read)									#Add the Resfile to the TaskFactory
-			movemap = MoveMap()									#Setup the MoveMap
-			movemap.set_bb(False)									#Do not change the phi and psi BackBone angles
-			movemap.set_chi(True)									#Change the chi Side Chain angle
-			mover = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()			#Call the FastDesign mover
-			mover.set_task_factory(task)								#Add the TaskFactory to it
-			mover.set_movemap(movemap)								#Add the MoveMap to it
-			mover.set_scorefxn(scorefxn)								#Add the Score Function to it
-			mover.apply(pose)
-			os.remove('Resfile.resfile')								#To keep working directory clean, and to make sure each Resfile has the info for each layer only and they do not get mixed and appended together in one Resfile
-			#5 - Relax pose
-			relax.apply(pose)
-		#C - Output result
-		score3_of_design_after_relax = scorefxn(pose)							#Measure score of designed pose
-		pose.dump_pdb('structure.pdb')									#Export final pose into a .pdb structure file
-		print('---------------------------------------------------------')
-		print('Original Structure Score:\t{}'.format(score1_original_before_relax))
-		print('Relaxed Original Score:\t{}'.format(score2_original_after_relax))
-		print('Relaxed Design Score:\t{}'.format(score3_of_design_after_relax))
-		RosettaDesign.BLAST(self , filename , 'structure.pdb')
-
-	def pack_flxbb(self , filename):
-		'''
-		Applies RosettaDesign to change the whole
-		structure's amino acids (one layer at a time as
-		well as designing towards an optimally packed core)
-		while maintaining the same backbone
-		Generates the structure.pdb file
-		'''
-		#A - Relax original structure
-		pose = pose_from_pdb(filename)
-		scorefxn = get_fa_scorefxn()
-		score1_original_before_relax = scorefxn(pose)							#Measure score before relaxing
-		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-		relax.set_scorefxn(scorefxn)
-		relax.apply(pose)
-		score2_original_after_relax = scorefxn(pose)							#Measure score after relaxing
-		#B - FastRelax protocol										#Uses Generic Monte Carlo with PackStat as a filter to direct FastRelax towards an optimally packed structure core
-		chain = pose.pdb_info().chain(1)								#Identify chain
-		layers = [2 , 1 , 0]										#Layer Identity from SASA Surface = [0] , Boundary = [1] , Core = [2]
-		for identity in layers:										#Loop through each layer
-			#1 - Setup the PackStat filter
-			filters = rosetta.protocols.simple_filters.PackStatFilter()
-			#2 - Identify The Layers
-			sasa = RosettaDesign.SASA(self , filename)						#Re-calculate SASA every time because amino acid position can change from one layer to another during the design phase, therefore make sure to design the layer not the amino acid
-			layer = sasa[identity]									#Changes every iteration to start with Core (sasa[2]) then Boundary (sasa[1]) then Surface (sasa[0])
-			#3 - Generate the resfile								#Will generate a new Resfile for each layer (which is why it is deleted at the end of the loop)
-			Resfile = open('Resfile.resfile' , 'w')
-			Resfile.write('NATAA\n')
-			Resfile.write('start\n')
-			for line in layer:
-				Resfile.write(str(line) + ' ' + chain + ' ALLAA\n')
-			Resfile.close()
-			#4 - Setup the FastRelax mover
-			read = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('Resfile.resfile')	#Call the generated Resfile
-			task = pyrosetta.rosetta.core.pack.task.TaskFactory()					#Setup the TaskFactory
-			task.push_back(read)									#Add the Resfile to the TaskFactory
-			movemap = MoveMap()									#Setup the MoveMap
-			movemap.set_bb(True)									#Do not change the phi and psi BackBone angles
-			movemap.set_chi(True)									#Change the chi Side Chain angle
-			mover = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()			#Call the FastDesign mover
-			mover.set_task_factory(task)								#Add the TaskFactory to it
-			mover.set_movemap(movemap)								#Add the MoveMap to it
-			mover.set_scorefxn(scorefxn)								#Add the Score Function to it
-			mover.apply(pose)
-			os.remove('Resfile.resfile')								#To keep working directory clean, and to make sure each Resfile has the info for each layer only and they do not get mixed and appended together in one Resfile
-			#5 - Relax pose
-			relax.apply(pose)
-		#C - Output result
-		score3_of_design_after_relax = scorefxn(pose)							#Measure score of designed pose
-		pose.dump_pdb('structure.pdb')									#Export final pose into a .pdb structure file
-		print('---------------------------------------------------------')
-		print('Original Structure Score:\t{}'.format(score1_original_before_relax))
-		print('Relaxed Original Score:\t{}'.format(score2_original_after_relax))
-		print('Relaxed Design Score:\t{}'.format(score3_of_design_after_relax))
-		RosettaDesign.BLAST(self , filename , 'structure.pdb')
 
 def Fragments(filename):
 	'''
@@ -325,8 +128,7 @@ def Fragments(filename):
 	used for the Abinitio folding simulation. Then measures the
 	RMSD for each fragment at each position and chooses the
 	lowest RMSD. Then averages out the lowest RMSDs. Then plots
-	the lowest RMSD fragment for each positon
-
+	the lowest RMSD fragment for each positon.
 	Generates the 3-mer file, the 9-mer file, the PsiPred file,
 	the RMSD vs Position PDF plot with the averaged fragment
 	RMSD printed in the plot
@@ -474,81 +276,6 @@ def Fragments(filename):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
-def FoldPDB_PSOC(line):
-	'''
-	Fold a primary structure using the phi, psi, and omega
-	torsion angles as well as the CA atom constraints
-	Generates the Backbone.pdb file
-	'''
-	size = int(len(line.split(';')) / 4)
-	Vs = list()
-	for numb in range(size):
-		Vs.append('V')
-	sequence = ''.join(Vs)
-	pose = pose_from_sequence(sequence)
-	#Isolate each angle and constraint
-	tick = 0
-	PHI = list()
-	PSI = list()
-	OMG = list()
-	CST = list()
-	for angle in line.split(';'):
-		if tick == 0:
-			PHI.append(angle)
-			tick = 1
-		elif tick == 1:
-			PSI.append(angle)
-			tick = 2
-		elif tick == 2:
-			OMG.append(angle)
-			tick = 3
-		else:
-			CST.append(angle)
-			tick = 0
-	count = 1
-	#Move amino acids angles
-	for P , S , O in zip(PHI , PSI , OMG):
-		pose.set_phi(count , float(P))
-		pose.set_psi(count , float(S))
-		pose.set_omega(count,float(O))
-		count += 1
-	atom = 1
-	#Write constraints file
-	for cst in CST:
-		line = 'AtomPair CA 1 CA ' + str(atom) +' GAUSSIANFUNC '+ str(cst) +' 1.0\n'
-		thefile = open('constraints.cst' , 'a')
-		thefile.write(line)
-		thefile.close()
-		atom += 1
-	#Add constraints option to pose
-	constraints = pyrosetta.rosetta.protocols.simple_moves.ConstraintSetMover()
-	constraints.constraint_file('constraints.cst')
-	constraints.add_constraints(True)
-	constraints.apply(pose)
-	#Score function with weight on only atom_pair_constraint
-	scorefxn = ScoreFunction()
-	scorefxn.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.atom_pair_constraint , 1.0)
-	#Constraint relax to bring atoms together
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relax.set_scorefxn(scorefxn)
-	relax.constrain_relax_to_start_coords(True)
-	relax.constrain_coords(True)
-	relax.apply(pose)
-	#Normal FastRelax with constraints
-	scorefxn = pyrosetta.rosetta.core.scoring.ScoreFunctionFactory.create_score_function('ref2015_cst')
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relax.set_scorefxn(scorefxn)
-	relax.constrain_relax_to_start_coords(True)
-	relax.constrain_coords(True)
-	relax.apply(pose)
-	#Normal FastRelax without constraints
-	scorefxn = get_fa_scorefxn()
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relax.set_scorefxn(scorefxn)
-	relax.apply(pose)
-	pose.dump_pdb('Backbone.pdb')
-	os.remove('constraints.cst')
-
 def FoldPDB_PSC(line):
 	'''
 	Fold a primary structure using the phi and psi torsion
@@ -620,30 +347,31 @@ def FoldPDB_PSC(line):
 	os.remove('constraints.cst')
 
 def GAN():
-# Import data
+	'''
+	A Generative Adverserial Neural Network that will learn the structure of
+	ideal proteins given their phi, psi angles as well as their CA1-CAn
+	constraints (the dataPSC.csv dataset). Then it generates novel angles and
+	constraints from random noise that will fold into a novel protein backbone.
+	'''
+	# Import data
 	data = pd.read_csv('dataPSC.csv', ';')
-
 	# Convert data into numpy arrays
 	phi = data[data.columns[2::3]].values
 	psi = data[data.columns[3::3]].values
 	cst = data[data.columns[4::3]].values
-
 	# MinMax scaling
 	phi /= 360
 	psi /= 360
 	cst /= 207.801
-
 	# Make the tensor - shape (examples, residues, 3 channels 3 P S C)
 	X = np.array([phi, psi, cst])	# Shape = (3, 5187, 150)
 	X = np.swapaxes(X, 0, 2)	# Change shape to (150, 5187, 3)
 	X = np.swapaxes(X, 0, 1)	# Change shape to (5187, 150, 3)
-
 	#Network values
 	shape = (150 , 3)
 	latent = 100
 	batchs = 32
 	epochs = 102
-
 	#Discriminator
 	D = keras.models.Sequential()
 	D.add(keras.layers.Flatten(input_shape=shape))
@@ -651,7 +379,6 @@ def GAN():
 	D.add(keras.layers.Dense(256))
 	D.add(keras.layers.Dense(1, activation='sigmoid'))
 	D.summary()
-
 	#Generator
 	G = keras.models.Sequential()
 	G.add(keras.layers.Dense(256, input_dim=latent))
@@ -660,61 +387,57 @@ def GAN():
 	G.add(keras.layers.Dense(np.prod(shape), activation='sigmoid'))
 	G.add(keras.layers.Reshape(shape))
 	G.summary()
-
 	#Discriminator Model
 	DM = keras.models.Sequential()
 	DM.add(D)
 	DM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-
 	#Adversarial Model
 	AM = keras.models.Sequential()
 	AM.add(G)
 	AM.add(D)
 	AM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-
-	#Training
-	for epoch in range(epochs):
-		#Generate a fake structures
-		real = X[np.random.randint(0, X.shape[0], size=batchs)]
-		noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
-		fake = G.predict(noise)
-		#Train discriminator
-		x = np.concatenate((real, fake))
-		y = np.ones([2*batchs, 1])
-		y[batchs:, :] = 0
-		d_loss = DM.train_on_batch(x, y)
-		#Train adversarial
-		y = np.ones([batchs, 1])
-		a_loss = AM.train_on_batch(noise, y)
-		D_loss = round(float(d_loss[0]), 3)
-		D_accu = round(float(d_loss[1]), 3)
-		A_loss = round(float(a_loss[0]), 3)
-		print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
-		
-	#Save Model
-	#G.save_weights('GAN.h5')
-
-	#Load model and weights
-	#G.load_weights('GAN.h5')
-
-	#Generate
-	noise = np.random.normal(0.5, 0.5, (1, 100))
-	gen = G.predict(noise)
-	gen = gen.reshape([450])
-	gen = np.ndarray.tolist(gen)
-	#Renormalise
-	#https://github.com/hyperopt/hyperopt
-	#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
-	#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
-
+	if argv[1] == 'train':
+		#Training
+		for epoch in range(epochs):
+			#Generate a fake structures
+			real = X[np.random.randint(0, X.shape[0], size=batchs)]
+			noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
+			fake = G.predict(noise)
+			#Train discriminator
+			x = np.concatenate((real, fake))
+			y = np.ones([2*batchs, 1])
+			y[batchs:, :] = 0
+			d_loss = DM.train_on_batch(x, y)
+			#Train adversarial
+			y = np.ones([batchs, 1])
+			a_loss = AM.train_on_batch(noise, y)
+			D_loss = round(float(d_loss[0]), 3)
+			D_accu = round(float(d_loss[1]), 3)
+			A_loss = round(float(a_loss[0]), 3)
+			print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
+			#Save Model
+			G.save_weights('GAN.h5')
+	else:
+		#Load model and weights
+		G.load_weights('GAN.h5')
+		#Generate
+		noise = np.random.normal(0.5, 0.5, (1, 100))
+		gen = G.predict(noise)
+		gen = gen.reshape([450])
+		gen = np.ndarray.tolist(gen)
+		#Renormalise
+		#https://github.com/hyperopt/hyperopt
+		#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
+		#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
 	return(gen)
-	
+
 def main():
-	line = GAN()
+	line = GAN()			##### <-------- Requires Work
 	FoldPDB_PSC(line)
-	Design.pack_flxbb('Backbone.pdb')
+	RD = RosettaDesign()
+	RD.fixbb('Backbone.pdb')	##### <-------- Requires Work
 	os.remove('Backbone.pdb')
-	Fragments('DeNovo.pdb')
+	Fragments('structure.pdb')
 
 if __name__ == '__main__':
 	main()
