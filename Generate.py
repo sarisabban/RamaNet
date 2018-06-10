@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os
+import sys
 import re
 import time
 import datetime
@@ -347,6 +348,9 @@ def FoldPDB_PSC(line):
 	os.remove('constraints.cst')
 
 def GAN():
+	#https://github.com/hyperopt/hyperopt
+	#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
+	#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
 	'''
 	A Generative Adverserial Neural Network that will learn the structure of
 	ideal proteins given their phi, psi angles as well as their CA1-CAn
@@ -371,7 +375,7 @@ def GAN():
 	shape = (150 , 3)
 	latent = 100
 	batchs = 32
-	epochs = 102
+	epochs = 1
 	#Discriminator
 	D = keras.models.Sequential()
 	D.add(keras.layers.Flatten(input_shape=shape))
@@ -396,7 +400,7 @@ def GAN():
 	AM.add(G)
 	AM.add(D)
 	AM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-	if argv[1] == 'train':
+	if sys.argv[1] == 'train':
 		#Training
 		for epoch in range(epochs):
 			#Generate a fake structures
@@ -420,16 +424,18 @@ def GAN():
 	else:
 		#Load model and weights
 		G.load_weights('GAN.h5')
-		#Generate
-		noise = np.random.normal(0.5, 0.5, (1, 100))
-		gen = G.predict(noise)
-		gen = gen.reshape([450])
-		gen = np.ndarray.tolist(gen)
-		#Renormalise
-		#https://github.com/hyperopt/hyperopt
-		#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
-		#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
-	return(gen)
+	noise = np.random.normal(0.5, 0.5, (1, 100))
+	gen = G.predict(noise)
+	gen = gen.reshape([450])
+	gen = np.ndarray.tolist(gen)
+	phiout = gen[0::3]	#[start:end:step]
+	psiout = gen[1::3]	#[start:end:step]
+	cstout = gen[2::3]	#[start:end:step]
+	#Renormalise
+	phiout = [x*360.0 for x in phiout]
+	psiout = [x*360.0 for x in phiout]
+	cstout = [x*207.801 for x in phiout]
+	return(phiout, psiout, cstout)
 
 def main():
 	line = GAN()			##### <-------- Requires Work
