@@ -17,7 +17,7 @@ The script will generate 1 structure. It is advised to run this script in an arr
 
 `python3 Database.py`
 
-This script will result in 1 file:
+This script will result in one file:
 
 * dataPSC.csv
 
@@ -29,18 +29,14 @@ You can then use the following command to train the General Adverserial Neural N
 
 But we provide a trained neural network within the DeNovo.py script, thus you can just go ahead and start your work from the next step.
 
-2. Use the following command to preform the *De Novo* protein design:
+2. Use the following command to generate a novel protein structure:
 
 `python3 Generate.py`
 
-DeNovo1.py works with PyRosetta4 python 3.6 release 176 and previous.
-
-DeNovo2.py works with PyRosetta4 python 3.6 release 177 onwards.
-
-This script will result in 7 files:
-* Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**DeNovo.pdb**)
+This script (computation time ~24 hours) will result in 7 files:
+* Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
 * Sequence designed file (**structure.pdb**)
-* Abinitio input files (**structure.pdb**, **frags.200.3mers**, **frags.200.9mers**, **pre.psipred.ss2**)
+* Abinitio input files (**structure.fasta**, **frags.200.3mers**, **frags.200.9mers**, **pre.psipred.ss2**)
 * Fragment quality plot (**plot_frag.pdb**)
 
 # This script is still under development. This statement will be removed when the script is completed and benchmarked.
