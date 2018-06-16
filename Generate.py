@@ -402,7 +402,7 @@ def GAN():
 	X = np.swapaxes(X, 0, 2)	# Change shape to (150, 5187, 3)
 	X = np.swapaxes(X, 0, 1)	# Change shape to (5187, 150, 3)
 	#Network values
-	shape = (150 , 3)
+	shape = (150, 3)
 	latent = 100
 	batchs = 32
 	epochs = 1
