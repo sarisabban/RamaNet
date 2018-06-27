@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
 import os , math , gzip , Bio.PDB , Bio.pairwise2 , tqdm
-#from pyrosetta import *
-#from pyrosetta.toolbox import *
-#init()
+from pyrosetta import *
+from pyrosetta.toolbox import *
+init()
 
 def Database(TempDIR , FinalDIR):
 	''' Downloads the entire PDB database from https://www.wwpdb.org/, moves all files into one directory, then uncompresses all the files '''
@@ -649,6 +649,78 @@ def SS(directory):
 		data.close()
 		count += 1
 	os.system('mv SS.csv {}'.format(current))
+
+def Clean(directory):
+	os.mkdir('PDBCleaned')
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + "Cleaning structures" + '\x1b[0m')
+	for TheFile in tqdm.tqdm(pdbfilelist):
+		CurFile = open(TheFile , 'r')
+		NewFile = open('Clean-{}'.format(TheFile) , 'a')
+		for line in CurFile:
+			if line.split()[0] == 'ATOM':
+				NewFile.write(line)
+		CurFile.close()
+		NewFile.close()
+		os.system('mv Clean-{} ../PDBCleaned'.format(TheFile))
+
+def Score(directory):
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	scorefnx = get_fa_scorefxn()
+	print('\x1b[32m' + "Scoring structures" + '\x1b[0m')
+	for TheFile in tqdm.tqdm(pdbfilelist):
+		try:
+			pose = pose_from_pdb(TheFile)
+			print(scorefnx(pose))
+		except:
+			os.remove(TheFile)
+
+def Path(directory , path):
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + "Generating Paths" + '\x1b[0m')
+	PathFile = open('PDB.list' , 'a')
+	for TheFile in tqdm.tqdm(pdbfilelist):
+		line = '{}/PDBCleaned/{}\n'.format(path , TheFile)
+		PathFile.write(line)
+	os.system('mv PDB.list ../')
+
+def Relax(directory):
+	os.mkdir('PDBRelaxed')
+	current = os.getcwd()
+	pdbfilelist = os.listdir(directory)
+	os.chdir(directory)
+	print('\x1b[32m' + "Relaxing structures" + '\x1b[0m')
+	for TheFile in tqdm.tqdm(pdbfilelist):
+		for i in range(1, 101):
+			scorefnx = get_fa_scorefxn()
+			relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+			relax.set_scorefxn(scorefxn)
+			pose = pose_from_pdb(TheFile)
+			relax.apply(pose)
+			pose.dump_pdb('Relaxed{}-{}'.format(i , TheFile))
+			os.system('mv Relaxed{}-{} ../PDBRelaxed'.format(i , TheFile))
+
+def RelaxHPC(path, cores):
+	HPCfile = open('relax.pbs', 'w')
+	HPCfile.write("""
+#!/bin/bash
+#PBS -N Relax
+#PBS -q fat
+#PBS -l select=1:ncpus=1
+#PBS -j oe
+#PBS -J 1-{}
+cd $PBS_O_WORKDIR
+mkdir PDBRelaxed
+cd PDBRelaxed
+thefile=$(awk -v "line=${}" 'NR == line {}' ../PDB.list)
+{}/main/source/bin/relax.default.linuxgccrelease -relax:thorough -nstruct 100 -database {}/main/database -s $thefile
+""".format(str(cores),'{PBS_ARRAY_INDEX}', '{ print; exit }', path, path))
 #---------------------------------------------------------------------------------------------------------------------------------------
 #Protocol to isolate specific types of structures
 Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
@@ -662,12 +734,19 @@ Renumber('PDBDatabase')			# 7. Renumber structures starting at amino acid 1
 Rg('PDBDatabase' , 15)			# 9. Remove structures that are below a specified Raduis of Gyration value
 Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
 
+########## --- HUMAN EYE FILTERING --- ##########
+#Clean('PDBDatabase')			# 11. Clean every structure in the database
+#Score('PDBCleaned')			# 12. Score each structure in PyRosetta and get only those that pass through (if you get a segmentation fault, you must manually delete that file, python cannot try/except arround it)
+#Path('PDBCleaned' , '{PATH}')		# 13. Make a list of all paths
+#Relax('PDBCleaned')			# 14. Relax each structure and generate 100 structures
+#RelaxHPC('/app/biology/Rosetta_3.7', 829)# 15. Relax each structure and generate 100 in HPC
+
 #Protocol to extract specific information from isolated structures
-#DatasetR('PDBDatabase')		# 11. Get the secondary structures and distances
-#DatasetCA('PDBDatabase')		# 12. Get each residue's CA atom's XYZ coordinates
-#DatasetPSO('PDBDatabase')		# 13. Get each residue's phi, psi, and omega angles
-#DatasetPS('PDBDatabase')		# 14. Get each residue's phi and psi angles
-#DatasetPSOC('PDBDatabase')		# 15. Get each residue's phi, psi, and omega angles as well as CA atom constraints
 DatasetPSC('PDBDatabase')		# 16. Get each residue's phi and psi angles as well as CA atom constraints
-#Seq('PDBDatabase')			# 17 . Get each protein's sequence
-#SS('PDBDatabase')			# 18 . Get each residue's secondary structure
+#DatasetR('PDBDatabase')		# 17. Get the secondary structures and distances
+#DatasetCA('PDBDatabase')		# 18. Get each residue's CA atom's XYZ coordinates
+#DatasetPSO('PDBDatabase')		# 19. Get each residue's phi, psi, and omega angles
+#DatasetPS('PDBDatabase')		# 20. Get each residue's phi and psi angles
+#DatasetPSOC('PDBDatabase')		# 21. Get each residue's phi, psi, and omega angles as well as CA atom constraints
+#Seq('PDBDatabase')			# 22. Get each protein's sequence
+#SS('PDBDatabase')			# 23. Get each residue's secondary structure
