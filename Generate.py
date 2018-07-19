@@ -837,6 +837,9 @@ def GAN():
 	#https://github.com/hyperopt/hyperopt
 	#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
 	#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
+	#https://github.com/automl/HpBandSter
+	#https://arxiv.org/abs/1807.01774
+	#http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf
 	'''
 	A Generative Adverserial Neural Network that will learn the structure of
 	ideal proteins given their phi, psi angles as well as their CA1-CAn
