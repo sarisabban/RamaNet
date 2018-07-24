@@ -77,9 +77,9 @@ def FoldPDB_PSC(data):
 	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
 	relax.set_scorefxn(scorefxn)
 	#Run Relaxations
-#	relaxCST.apply(pose)	#Most important
-	relaxC.apply(pose)	#doesn't give much difference
-#	relax.apply(pose)	#doesn't give much difference
+#	relaxCST.apply(pose)	#only brings structure together
+	relaxC.apply(pose)	#Best on its own
+#	relax.apply(pose)	#Best on its own
 	pose.dump_pdb('Backbone.pdb')
 	os.remove('constraints.cst')
 
