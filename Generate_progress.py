@@ -85,20 +85,21 @@ def FoldPDB_PSC(data):
 
 def direct():
 	for TheFile in os.listdir('results'):
-		thefile = open('results/{}'.format(TheFile), 'r')
-		#Remove zero ends
-		newfile = open('results/X{}'.format(TheFile), 'a')
-		for line in thefile:
-			line = line.strip().split(';')
-			newline = [round(float(line[0]), 3), round(float(line[1]), 3), round(float(line[2]), 3)]
-			if newline[0] == 0.0 and newline[1] == 0.0 and newline[2] == 0.0:
-				continue
-			else:
-				line = ';'.join(line)
-				newfile.write(line + '\n')
-		thefile.close()
-		newfile.close()
-		newfile = open('results/X{}'.format(TheFile), 'r')
+#		thefile = open('results/{}'.format(TheFile), 'r')
+#		#Remove zero ends
+#		newfile = open('results/X{}'.format(TheFile), 'a')
+#		for line in thefile:
+#			line = line.strip().split(';')
+#			newline = [round(float(line[0]), 3), round(float(line[1]), 3), round(float(line[2]), 3)]
+#			if newline[0] == 0.0 and newline[1] == 0.0 and newline[2] == 0.0:
+#				continue
+#			else:
+#				line = ';'.join(line)
+#				newfile.write(line + '\n')
+#		thefile.close()
+#		newfile.close()
+#		newfile = open('results/X{}'.format(TheFile), 'r')
+		newfile = open('results/{}'.format(TheFile), 'r')
 		phiout = []
 		psiout = []
 		cstout = []
@@ -109,14 +110,16 @@ def direct():
 			cstout.append(float(line[2]))
 		phiout = [x*360.0 for x in phiout]
 		psiout = [x*360.0 for x in psiout]
-		cstout = [x*54.505 for x in cstout]#small database 54.505 (old 207.801)
+		cstout = [x*54.505 for x in cstout]
 		data = (phiout, psiout, cstout)
 		FoldPDB_PSC(data)
 		Name = TheFile.split('.')[0]
 		os.rename('Backbone.pdb', '{}.pdb'.format(TheFile))
 	os.system('mv *.pdb results')
 	os.system('rm results/*.txt')
-	os.system('tar -zvcf results.tar.gz results')
+	os.mkdir('results/good')
+	os.mkdir('results/bad')
+#	os.system('tar -zvcf results.tar.gz results')
 
 def once():
 	thefile = open('ori.txt', 'r')
@@ -143,10 +146,10 @@ def once():
 		cstout.append(float(line[2]))
 	phiout = [x*360.0 for x in phiout]
 	psiout = [x*360.0 for x in psiout]
-	cstout = [x*54.505 for x in cstout]#small database 54.505 (old 207.801)
+	cstout = [x*54.505 for x in cstout]
 	data = (phiout, psiout, cstout)
 	FoldPDB_PSC(data)
 	os.remove('xx.txt')
 
-#direct()
-once()
+direct()
+#once()
