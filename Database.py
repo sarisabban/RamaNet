@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 import os , math , gzip , Bio.PDB , Bio.pairwise2 , tqdm
 from pyrosetta import *
