@@ -1478,7 +1478,7 @@ def GAN():
 	cstout = [x*89.4 for x in cstout]
 	return(phiout, psiout, cstout)
 
-def DCGAN():
+def DCGAN_PSC():
 	# Import data
 	data = pd.read_csv('dataPSC.csv', ';')
 	# Convert data into numpy arrays
@@ -1490,14 +1490,14 @@ def DCGAN():
 	psi /= 360
 	cst /= 207.801
 	# Make the tensor - shape (examples, residues, 3 channels 3 P S C)
-	X = np.array([phi, psi, cst])	# Shape = (3, 5187, 150)
-	X = np.swapaxes(X, 0, 2)	# Change shape to (150, 5187, 3)
-	X = np.swapaxes(X, 0, 1)	# Change shape to (5187, 150, 3)
+	X = np.array([phi, psi, cst])	# Shape = (3, 82900, 150)
+	X = np.swapaxes(X, 0, 2)	# Change shape to (150, 82900, 3)
+	X = np.swapaxes(X, 0, 1)	# Change shape to (82900, 150, 3)
 	#Network values
 	shape = (150, 3)
 	latent = 100
 	batchs = 32
-	epochs = 1
+	epochs = 3
 	#Discriminator
 	D = keras.models.Sequential()
 	D.add(keras.layers.Conv1D(32, kernel_size=3, input_shape=shape))
@@ -1551,7 +1551,7 @@ def DCGAN():
 		A_loss = round(float(a_loss[0]), 3)
 		print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
 		#Save Model
-		G.save_weights('DCGAN.h5')
+		G.save_weights('DCGAN_PSC.h5')
 	noise = np.random.normal(0.5, 0.5, (1, 100))
 	gen = G.predict(noise)
 	gen = gen.reshape([450])
@@ -1564,6 +1564,90 @@ def DCGAN():
 	psiout = [x*360.0 for x in psiout]
 	cstout = [x*89.4 for x in cstout]
 	return(phiout, psiout, cstout)
+
+def DCGAN_PS():
+	# Import data
+	data = pd.read_csv('dataPS.csv', ',')
+	# Convert data into numpy arrays
+	phi = data[data.columns[2::2]].values
+	psi = data[data.columns[3::2]].values
+
+	# MinMax scaling
+	phi /= 360
+	psi /= 360
+	# Make the tensor - shape (examples, residues, 2 channels 3 P S )
+	X = np.array([phi, psi])	# Shape = (2, 82900, 150)
+	X = np.swapaxes(X, 0, 2)	# Change shape to (150, 82900, 2)
+	X = np.swapaxes(X, 0, 1)	# Change shape to (82900, 150, 2)
+	#Network values
+	shape = (150, 2)
+	latent = 100
+	batchs = 32
+	epochs = 3
+	#Discriminator
+	D = keras.models.Sequential()
+	D.add(keras.layers.Conv1D(32, kernel_size=3, input_shape=shape))
+	D.add(keras.layers.LeakyReLU(alpha=0.2))
+	D.add(keras.layers.Conv1D(64, kernel_size=3))
+	D.add(keras.layers.LeakyReLU(alpha=0.2))
+	D.add(keras.layers.Conv1D(128, kernel_size=3))
+	D.add(keras.layers.LeakyReLU(alpha=0.2))
+	D.add(keras.layers.Conv1D(256, kernel_size=3))
+	D.add(keras.layers.LeakyReLU(alpha=0.2))
+	D.add(keras.layers.Flatten())
+	D.add(keras.layers.Dense(1, activation='sigmoid'))
+	D.summary()
+	#Generator
+	G = keras.models.Sequential()
+	G.add(keras.layers.Dense(79*3, activation='relu', input_dim=latent))
+	G.add(keras.layers.Reshape((79, 3)))
+	G.add(keras.layers.Conv1D(128, kernel_size=3))
+	G.add(keras.layers.Activation('relu'))
+	G.add(keras.layers.UpSampling1D())
+	G.add(keras.layers.Conv1D(64, kernel_size=3))
+	G.add(keras.layers.Activation('relu'))
+	G.add(keras.layers.Conv1D(2, kernel_size=3))
+	G.add(keras.layers.Activation('tanh'))
+	G.summary()
+	#Discriminator Model
+	DM = keras.models.Sequential()
+	DM.add(D)
+	DM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
+	#Adversarial Model
+	AM = keras.models.Sequential()
+	AM.add(G)
+	AM.add(D)
+	AM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
+	#Training
+	for epoch in range(epochs):
+		#Generate a fake structures
+		real = X[np.random.randint(0, X.shape[0], size=batchs)]
+		noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
+		fake = G.predict(noise)
+		#Train discriminator
+		x = np.concatenate((real, fake))
+		y = np.ones([2*batchs, 1])
+		y[batchs:, :] = 0
+		d_loss = DM.train_on_batch(x, y)
+		#Train adversarial
+		y = np.ones([batchs, 1])
+		a_loss = AM.train_on_batch(noise, y)
+		D_loss = round(float(d_loss[0]), 3)
+		D_accu = round(float(d_loss[1]), 3)
+		A_loss = round(float(a_loss[0]), 3)
+		print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
+		#Save Model
+		G.save_weights('DCGAN_PS.h5')
+	noise = np.random.normal(0.5, 0.5, (1, 100))
+	gen = G.predict(noise)
+	gen = gen.reshape([300])
+	gen = np.ndarray.tolist(gen)
+	phiout = gen[0::2]	#[start:end:step]
+	psiout = gen[1::2]	#[start:end:step]
+	#Re-normalise
+	phiout = [x*360.0 for x in phiout]
+	psiout = [x*360.0 for x in psiout]
+	return(phiout, psiout)
 
 def testing():
 	'''
@@ -1593,7 +1677,7 @@ def testing():
 	os.mkdir('results/bad')
 
 def main():
-	data = DCGAN()
+	data = DCGAN_PS()
 	FoldPDB_PSC(data)
 	RD = RosettaDesign()
 	RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
