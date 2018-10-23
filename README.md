@@ -1,5 +1,5 @@
 # ProtAI
-Preforms De Novo Design using Machine Learning and PyRosetta to generates a novel synthesic protein structure.
+Preforms De Novo Design using Machine Learning and PyRosetta to generate a novel synthesic protein structure.
 
 ## Requirements:
 1. Make sure you install [PyRosetta](http://www.pyrosetta.org) as the website describes.
@@ -19,9 +19,9 @@ The script will generate 1 structure. It is advised to run this script in an arr
 
 This script is complicated, requiring you to carefulyl read the actual script itself and modify it (comment in/out functions) to your needs. One difficult point is the *Human Eye Filtering* step which requires a person to filter out all the unwanted structures before moving onto cleaning up each structure and augmenting the data which eventually results in the following file:
 
-* dataPSC.csv
+* dataPS.csv
 
-Which stands for dataset of Phi pSi and Constraints. The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, that have more helices and strands than loops, and with an Rg value of less than 15. The script results in a dataset with the first column as the training example number, then the PDB ID of the file (with added strings to identify how it was made), then the angles *Phi* and *Psi*, then the distance between the first CA atom and subsequent CA atoms (used as *constraints*). *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occure, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file, given the required functions are commented in/out depending on needs. 
+Which stands for dataset of Phi pSi. The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, that have more helices and strands than loops, and with an Rg value of less than 15. The script results in a dataset with the first column as the training example number, then the PDB ID of the file (with added strings to identify how it was made), then the angles *Phi* and *Psi*. *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occure, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file, given the required functions are commented in/out depending on needs. 
 
 It is best to contact me if you want to generate your own database and I will walk you through it, it is not difficult, but works on individual basis. If you contact me I can also identify what people do not understand about this particular script and I will be able to modify this README file to make it easier to use.
 

@@ -742,11 +742,11 @@ Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to eac
 #RelaxHPC('/app/biology/Rosetta_3.7', 829)# 15. Relax each structure and generate 100 in HPC
 
 #Protocol to extract specific information from isolated structures
-DatasetPSC('PDBDatabase')		# 16. Get each residue's phi and psi angles as well as CA atom constraints
+#DatasetPSC('PDBDatabase')		# 16. Get each residue's phi and psi angles as well as CA atom constraints
 #DatasetR('PDBDatabase')		# 17. Get the secondary structures and distances
 #DatasetCA('PDBDatabase')		# 18. Get each residue's CA atom's XYZ coordinates
 #DatasetPSO('PDBDatabase')		# 19. Get each residue's phi, psi, and omega angles
-#DatasetPS('PDBDatabase')		# 20. Get each residue's phi and psi angles
+DatasetPS('PDBDatabase')		# 20. Get each residue's phi and psi angles
 #DatasetPSOC('PDBDatabase')		# 21. Get each residue's phi, psi, and omega angles as well as CA atom constraints
 #Seq('PDBDatabase')			# 22. Get each protein's sequence
 #SS('PDBDatabase')			# 23. Get each residue's secondary structure

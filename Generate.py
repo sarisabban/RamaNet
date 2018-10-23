@@ -17,23 +17,6 @@ from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
 
-def findmaxCST(filename):
-	data = open(filename, 'r')
-	cstALL = []
-	for line in data:
-		line = line.strip().split(';')
-		cstALL.append(line[1::3])
-	cst = []
-	for value in cstALL:
-		for item in value:
-			try:
-				item = float(item)
-				cst.append(item)
-			except:
-				pass
-	print(max(cst))
-#findmaxCST('dataPSC.csv')
-
 class RosettaDesign():
 	'''
 	This class preforms RosettaDesign either fixed backbone
@@ -1325,11 +1308,10 @@ def Fragments(filename):
 	os.remove('temp.dat')
 	return(Average_RMSD)
 
-def FoldPDB_PSC(data):
+def FoldPDB(data):
 	'''
 	Fold a primary structure using the phi and psi torsion
-	angles as well as the CA atom constraints. Generates
-	the Backbone.pdb file
+	angles Generates the Backbone.pdb file
 	'''
 	#Generate a pose
 	size = int(len(data[0]))
@@ -1341,7 +1323,6 @@ def FoldPDB_PSC(data):
 	#Isolate each angle and constraint
 	PHI = data[0]
 	PSI = data[1]
-	CST = data[2]
 	count = 1
 	#Move amino acid angles
 	for P, S in zip(PHI, PSI):
@@ -1349,43 +1330,13 @@ def FoldPDB_PSC(data):
 		pose.set_psi(count, float(S))
 		count += 1
 	atom = 1
-	#Write constraints file
-	for cst in CST:
-		line = 'AtomPair CA 1 CA '+str(atom)+' GAUSSIANFUNC '+str(cst)+' 1.0\n'
-		thefile = open('constraints.cst', 'a')
-		thefile.write(line)
-		thefile.close()
-		atom += 1
-	#Add constraints option to pose
-	constraints = pyrosetta.rosetta.protocols.constraint_movers.ConstraintSetMover()
-	constraints.constraint_file('constraints.cst')
-	constraints.add_constraints(True)
-	constraints.apply(pose)
-	#Setup score function with weight on only atom_pair_constraint
-	scorefxnCST = ScoreFunction()
-	scorefxnCST.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.atom_pair_constraint, 1.0)
-	#Setup constraint relax to bring atoms together
-	relaxCST = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relaxCST.set_scorefxn(scorefxnCST)
-	relaxCST.constrain_relax_to_start_coords(True)
-	relaxCST.constrain_coords(True)
-	#Setup normal FastRelax with constraints
+	#Run FastRelax
 	scorefxn = get_fa_scorefxn()
-	relaxC = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relaxC.set_scorefxn(scorefxn)
-	relaxC.constrain_relax_to_start_coords(True)
-	relaxC.constrain_coords(True)
-	#Setup normal FastRelax without constraints
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relax.set_scorefxn(scorefxn)
-	#Run Relaxations
-#	relaxCST.apply(pose)	#only brings structure together
-	relaxC.apply(pose)	#Best on its own
-#	relax.apply(pose)	#Best on its own
+	relax = pyrosetta.rosetta.protocols.relax.FastRelax(scorefxn)
+	relax.apply(pose)
 	pose.dump_pdb('Backbone.pdb')
-	os.remove('constraints.cst')
 
-def GAN():
+def DCGAN():
 	#https://github.com/hyperopt/hyperopt
 	#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
 	#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
@@ -1393,185 +1344,16 @@ def GAN():
 	#https://arxiv.org/abs/1807.01774
 	#http://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf
 	'''
-	A Generative Adverserial Neural Network that will learn the structure of
-	ideal proteins given their phi, psi angles as well as their CA1-CAn
-	constraints (the dataPSC.csv dataset). Then it generates novel angles and
-	constraints from random noise that will fold into a novel protein backbone.
+	A Convolutional Generative Adverserial Neural Network that will learn the structure of
+	ideal proteins given their phi, psi angles (the dataPS.csv dataset).
+	Then it generates novel angles and from random noise that will fold
+	into a novel protein backbone.
 	'''
-	# Import data
-	data = pd.read_csv('dataPSC.csv', ';')
-	# Convert data into numpy arrays
-	phi = data[data.columns[2::3]].values
-	psi = data[data.columns[3::3]].values
-	cst = data[data.columns[4::3]].values
-	# MinMax scaling
-	phi /= 360
-	psi /= 360
-	cst /= 207.801
-	# Make the tensor - shape (examples, residues, 3 channels 3 P S C)
-	X = np.array([phi, psi, cst])	# Shape = (3, 5187, 150)
-	X = np.swapaxes(X, 0, 2)	# Change shape to (150, 5187, 3)
-	X = np.swapaxes(X, 0, 1)	# Change shape to (5187, 150, 3)
-	#Network values
-	shape = (150, 3)
-	latent = 100
-	batchs = 32
-	epochs = 1
-	#Discriminator
-	D = keras.models.Sequential()
-	D.add(keras.layers.Flatten(input_shape=shape))
-	D.add(keras.layers.Dense(512, input_shape=shape))
-	D.add(keras.layers.Dense(256))
-	D.add(keras.layers.Dense(1, activation='sigmoid'))
-	D.summary()
-	#Generator
-	G = keras.models.Sequential()
-	G.add(keras.layers.Dense(256, input_dim=latent))
-	G.add(keras.layers.Dense(512))
-	G.add(keras.layers.Dense(1024))
-	G.add(keras.layers.Dense(np.prod(shape), activation='sigmoid'))
-	G.add(keras.layers.Reshape(shape))
-	G.summary()
-	#Discriminator Model
-	DM = keras.models.Sequential()
-	DM.add(D)
-	DM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-	#Adversarial Model
-	AM = keras.models.Sequential()
-	AM.add(G)
-	AM.add(D)
-	AM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-	if sys.argv[1] == 'train':
-		#Training
-		for epoch in range(epochs):
-			#Generate a fake structures
-			real = X[np.random.randint(0, X.shape[0], size=batchs)]
-			noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
-			fake = G.predict(noise)
-			#Train discriminator
-			x = np.concatenate((real, fake))
-			y = np.ones([2*batchs, 1])
-			y[batchs:, :] = 0
-			d_loss = DM.train_on_batch(x, y)
-			#Train adversarial
-			y = np.ones([batchs, 1])
-			a_loss = AM.train_on_batch(noise, y)
-			D_loss = round(float(d_loss[0]), 3)
-			D_accu = round(float(d_loss[1]), 3)
-			A_loss = round(float(a_loss[0]), 3)
-			print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
-			#Save Model
-			G.save_weights('GAN.h5')
-	else:
-		#Load model and weights
-		G.load_weights('GAN.h5')
-	noise = np.random.normal(0.5, 0.5, (1, 100))
-	gen = G.predict(noise)
-	gen = gen.reshape([450])
-	gen = np.ndarray.tolist(gen)
-	phiout = gen[0::3]	#[start:end:step]
-	psiout = gen[1::3]	#[start:end:step]
-	cstout = gen[2::3]	#[start:end:step]
-	#Re-normalise
-	phiout = [x*360.0 for x in phiout]
-	psiout = [x*360.0 for x in psiout]
-	cstout = [x*89.4 for x in cstout]
-	return(phiout, psiout, cstout)
-
-def DCGAN_PSC():
-	# Import data
-	data = pd.read_csv('dataPSC.csv', ';')
-	# Convert data into numpy arrays
-	phi = data[data.columns[2::3]].values
-	psi = data[data.columns[3::3]].values
-	cst = data[data.columns[4::3]].values
-	# MinMax scaling
-	phi /= 360
-	psi /= 360
-	cst /= 207.801
-	# Make the tensor - shape (examples, residues, 3 channels 3 P S C)
-	X = np.array([phi, psi, cst])	# Shape = (3, 82900, 150)
-	X = np.swapaxes(X, 0, 2)	# Change shape to (150, 82900, 3)
-	X = np.swapaxes(X, 0, 1)	# Change shape to (82900, 150, 3)
-	#Network values
-	shape = (150, 3)
-	latent = 100
-	batchs = 32
-	epochs = 3
-	#Discriminator
-	D = keras.models.Sequential()
-	D.add(keras.layers.Conv1D(32, kernel_size=3, input_shape=shape))
-	D.add(keras.layers.LeakyReLU(alpha=0.2))
-	D.add(keras.layers.Conv1D(64, kernel_size=3))
-	D.add(keras.layers.LeakyReLU(alpha=0.2))
-	D.add(keras.layers.Conv1D(128, kernel_size=3))
-	D.add(keras.layers.LeakyReLU(alpha=0.2))
-	D.add(keras.layers.Conv1D(256, kernel_size=3))
-	D.add(keras.layers.LeakyReLU(alpha=0.2))
-	D.add(keras.layers.Flatten())
-	D.add(keras.layers.Dense(1, activation='sigmoid'))
-	D.summary()
-	#Generator
-	G = keras.models.Sequential()
-	G.add(keras.layers.Dense(79*3, activation='relu', input_dim=latent))
-	G.add(keras.layers.Reshape((79, 3)))
-	G.add(keras.layers.Conv1D(128, kernel_size=3))
-	G.add(keras.layers.Activation('relu'))
-	G.add(keras.layers.UpSampling1D())
-	G.add(keras.layers.Conv1D(64, kernel_size=3))
-	G.add(keras.layers.Activation('relu'))
-	G.add(keras.layers.Conv1D(3, kernel_size=3))
-	G.add(keras.layers.Activation('tanh'))
-	G.summary()
-	#Discriminator Model
-	DM = keras.models.Sequential()
-	DM.add(D)
-	DM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-	#Adversarial Model
-	AM = keras.models.Sequential()
-	AM.add(G)
-	AM.add(D)
-	AM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-	#Training
-	for epoch in range(epochs):
-		#Generate a fake structures
-		real = X[np.random.randint(0, X.shape[0], size=batchs)]
-		noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
-		fake = G.predict(noise)
-		#Train discriminator
-		x = np.concatenate((real, fake))
-		y = np.ones([2*batchs, 1])
-		y[batchs:, :] = 0
-		d_loss = DM.train_on_batch(x, y)
-		#Train adversarial
-		y = np.ones([batchs, 1])
-		a_loss = AM.train_on_batch(noise, y)
-		D_loss = round(float(d_loss[0]), 3)
-		D_accu = round(float(d_loss[1]), 3)
-		A_loss = round(float(a_loss[0]), 3)
-		print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
-		#Save Model
-		G.save_weights('DCGAN_PSC.h5')
-	noise = np.random.normal(0.5, 0.5, (1, 100))
-	gen = G.predict(noise)
-	gen = gen.reshape([450])
-	gen = np.ndarray.tolist(gen)
-	phiout = gen[0::3]	#[start:end:step]
-	psiout = gen[1::3]	#[start:end:step]
-	cstout = gen[2::3]	#[start:end:step]
-	#Re-normalise
-	phiout = [x*360.0 for x in phiout]
-	psiout = [x*360.0 for x in psiout]
-	cstout = [x*89.4 for x in cstout]
-	return(phiout, psiout, cstout)
-
-def DCGAN_PS():
 	# Import data
 	data = pd.read_csv('dataPS.csv', ',')
 	# Convert data into numpy arrays
 	phi = data[data.columns[2::2]].values
 	psi = data[data.columns[3::2]].values
-
 	# MinMax scaling
 	phi /= 360
 	psi /= 360
@@ -1642,43 +1424,16 @@ def DCGAN_PS():
 	gen = G.predict(noise)
 	gen = gen.reshape([300])
 	gen = np.ndarray.tolist(gen)
-	phiout = gen[0::2]	#[start:end:step]
-	psiout = gen[1::2]	#[start:end:step]
+	phiout = gen[0::2]		#[start:end:step]
+	psiout = gen[1::2]		#[start:end:step]
 	#Re-normalise
 	phiout = [x*360.0 for x in phiout]
 	psiout = [x*360.0 for x in psiout]
 	return(phiout, psiout)
 
-def testing():
-	'''
-	Fold multiple DCGAN results within a directory for
-	neural network optimisation purposes
-	'''
-	for TheFile in os.listdir('results'):
-		newfile = open('results/{}'.format(TheFile), 'r')
-		phiout = []
-		psiout = []
-		cstout = []
-		for line in newfile:
-			line = line.strip().split(';')
-			phiout.append(float(line[0]))
-			psiout.append(float(line[1]))
-			cstout.append(float(line[2]))
-		phiout = [x*360.0 for x in phiout]
-		psiout = [x*360.0 for x in psiout]
-		cstout = [x*89.4 for x in cstout]
-		data = (phiout, psiout, cstout)
-		FoldPDB_PSC(data)
-		Name = TheFile.split('.')[0]
-		os.rename('Backbone.pdb', '{}.pdb'.format(TheFile))
-	os.system('mv *.pdb results')
-	os.system('rm results/*.txt')
-	os.mkdir('results/good')
-	os.mkdir('results/bad')
-
 def main():
-	data = DCGAN_PS()
-	FoldPDB_PSC(data)
+	data = DCGAN()
+	FoldPDB(data)
 	RD = RosettaDesign()
 	RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
 #	Fragments('structure.pdb')
