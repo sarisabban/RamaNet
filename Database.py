@@ -1,6 +1,11 @@
 #!/usr/bin/python
 
-import os , math , gzip , Bio.PDB , Bio.pairwise2 , tqdm
+import os
+import math
+import gzip
+import tqdm
+import Bio.PDB
+import Bio.pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
@@ -591,10 +596,7 @@ def DatasetPSC(directory):
 	os.system('mv dataPSC.csv {}'.format(current))
 
 def Fasta(directory):
-	'''
-	Get each protein's sequence
-	Generates a the FASTA.csv dataset file
-	'''
+	''' Get each protein's sequence. Generates a the FASTA.csv dataset file '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
@@ -615,10 +617,7 @@ def Fasta(directory):
 	os.system('mv FASTA.csv {}'.format(current))
 
 def SS(directory):
-	'''
-	Get each residue's secondary structure
-	Generates a the SS.csv dataset file
-	'''
+	''' Get each residue's secondary structure. Generates a the SS.csv dataset file '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
@@ -651,6 +650,7 @@ def SS(directory):
 	os.system('mv SS.csv {}'.format(current))
 
 def Clean(directory):
+	''' Clean each structure within a directory '''
 	os.mkdir('PDBCleaned')
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
@@ -667,6 +667,7 @@ def Clean(directory):
 		os.system('mv Clean-{} ../PDBCleaned'.format(TheFile))
 
 def Score(directory):
+	''' Score each structure using PyRosetta to make sure it is Rosetta compatible '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
@@ -680,6 +681,7 @@ def Score(directory):
 			os.remove(TheFile)
 
 def Path(directory , path):
+	''' Generate a file with the path to each file '''
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
 	os.chdir(directory)
@@ -691,6 +693,7 @@ def Path(directory , path):
 	os.system('mv PDB.list ../')
 
 def Relax(directory):
+	''' Relax each structure in a directory on a local computer '''
 	os.mkdir('PDBRelaxed')
 	current = os.getcwd()
 	pdbfilelist = os.listdir(directory)
@@ -707,9 +710,9 @@ def Relax(directory):
 			os.system('mv Relaxed{}-{} ../PDBRelaxed'.format(i , TheFile))
 
 def RelaxHPC(path, cores):
+	''' Generate a PBS job scheduler to perform each structure relax on a HPC '''
 	HPCfile = open('relax.pbs', 'w')
-	HPCfile.write("""
-#!/bin/bash
+	HPCfile.write("""#!/bin/bash
 #PBS -N Relax
 #PBS -q fat
 #PBS -l select=1:ncpus=1
@@ -721,32 +724,40 @@ cd PDBRelaxed
 thefile=$(awk -v "line=${}" 'NR == line {}' ../PDB.list)
 {}/main/source/bin/relax.default.linuxgccrelease -relax:thorough -nstruct 100 -database {}/main/database -s $thefile
 """.format(str(cores),'{PBS_ARRAY_INDEX}', '{ print; exit }', path, path))
-#---------------------------------------------------------------------------------------------------------------------------------------
-#Protocol to isolate specific types of structures
-Database('DATABASE' , 'PDBDatabase')	# 1. Download the PDB database
-Extract('PDBDatabase')			# 2. Extract files
-NonProtein('PDBDatabase')		# 3. Remove non-protein structures
-Size('PDBDatabase' , 80 , 150)		# 4. Remove structures less than or larger than a specified amino acid leangth
-Break('PDBDatabase')			# 5. Remove structure with broken chains
-Loops('PDBDatabase' , 10)		# 6. Remove structures that have loops that are larger than a spesific length
-Renumber('PDBDatabase')			# 7. Renumber structures starting at amino acid 1
-#RMSD('PDBDatabase' , 5)		# 8. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
-Rg('PDBDatabase' , 15)			# 9. Remove structures that are below a specified Raduis of Gyration value
-Sequence('PDBDatabase' , 75)		# 10. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
 
-########## --- HUMAN EYE FILTERING --- ##########
-#Clean('PDBDatabase')			# 11. Clean every structure in the database
-#Score('PDBCleaned')			# 12. Score each structure in PyRosetta and get only those that pass through (if you get a segmentation fault, you must manually delete that file, python cannot try/except arround it)
-#Path('PDBCleaned' , '{PATH}')		# 13. Make a list of all paths
-#Relax('PDBCleaned')			# 14. Relax each structure and generate 100 structures
-#RelaxHPC('/app/biology/Rosetta_3.7', 829)# 15. Relax each structure and generate 100 in HPC
+def main():
+	# Isolate specific types of structures:
+	#--------------------------------------
+	Database('DATABASE' , 'PDBDatabase')		# 1. Download the PDB database
+	Extract('PDBDatabase')						# 2. Extract files
+	NonProtein('PDBDatabase')					# 3. Remove non-protein structures
+	Size('PDBDatabase' , 80 , 150)				# 4. Remove structures less than or larger than a specified amino acid length
+	Break('PDBDatabase')						# 5. Remove structure with broken chains
+	Loops('PDBDatabase' , 10)					# 6. Remove structures that have loops that are larger than a spesific length
+	Renumber('PDBDatabase')						# 7. Renumber structures starting at amino acid 1
+	Rg('PDBDatabase' , 15)						# 8. Remove structures that are below a specified Radius of Gyration value
+	#RMSD('PDBDatabase' , 5)					# 9. Measure RMSD of each structure to each structure, remove if RMSD < specified value (CODE IS NOT VERY RELIABLE)
+	#Sequence('PDBDatabase' , 75)				# 10. Align the sequences of each structure to each structure, remove structures with similar sequences that fall above a user defined percentage
 
-#Protocol to extract specific information from isolated structures
-#DatasetPSC('PDBDatabase')		# 16. Get each residue's phi and psi angles as well as CA atom constraints
-#DatasetR('PDBDatabase')		# 17. Get the secondary structures and distances
-#DatasetCA('PDBDatabase')		# 18. Get each residue's CA atom's XYZ coordinates
-#DatasetPSO('PDBDatabase')		# 19. Get each residue's phi, psi, and omega angles
-DatasetPS('PDBDatabase')		# 20. Get each residue's phi and psi angles
-#DatasetPSOC('PDBDatabase')		# 21. Get each residue's phi, psi, and omega angles as well as CA atom constraints
-#Seq('PDBDatabase')			# 22. Get each protein's sequence
-#SS('PDBDatabase')			# 23. Get each residue's secondary structure
+	########## --- HUMAN EYE FILTERING --- ##########
+
+	# Extract specific information from isolated structures:
+	#-------------------------------------------------------
+	#Clean('PDBDatabase')						# 11. Clean every structure in the database
+	#Score('PDBCleaned')						# 12. Score each structure in PyRosetta and get only those that pass through (if you get a segmentation fault, you must manually delete that file, python cannot try/except arround it)
+	#Path('PDBCleaned' , '{PATH}')				# 13. Make a list of all paths
+	#Relax('PDBCleaned')						# 14. Relax each structure and generate 100 structures
+	#RelaxHPC('/app/biology/Rosetta_3.7', 829)	# 15. Relax each structure and generate 100 in HPC
+
+	# Generate the dataset:
+	#----------------------
+	#DatasetPSC('PDBDatabase')					# 16. Get each residue's phi and psi angles as well as CA atom constraints
+	#DatasetR('PDBDatabase')					# 17. Get the secondary structures and distances
+	#DatasetCA('PDBDatabase')					# 18. Get each residue's CA atom's XYZ coordinates
+	#DatasetPSO('PDBDatabase')					# 19. Get each residue's phi, psi, and omega angles
+	DatasetPS('PDBDatabase')					# 20. Get each residue's phi and psi angles
+	#DatasetPSOC('PDBDatabase')					# 21. Get each residue's phi, psi, and omega angles as well as CA atom constraints
+	#Seq('PDBDatabase')							# 22. Get each protein's sequence
+	#SS('PDBDatabase')							# 23. Get each residue's secondary structure
+
+if __name__ == '__main_': main()
