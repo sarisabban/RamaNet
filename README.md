@@ -16,7 +16,9 @@ The script will generate one structure. It is advised to run this script and gen
 1. You do not need to generate the Machine Learning Datasets, it is already provided and can be downloaded here:
 
 [Helix dataset]()
+
 [Sheet dataset]()
+
 [Mix dataset]()
 
 But if you want to replicate my work use the following command to generate the Machine Learning Dataset from the Protein Databank Database (computation time ~168 hours and requires more than 128GB of free disk space):
