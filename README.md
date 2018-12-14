@@ -59,7 +59,7 @@ But if you want to replicate my work you can use the following command to train 
 
 `python3 Generate.py`
 
-Make sure you have the weights file (weights.h5) available, either from training or downloaded from step 2, and that it is in the same directory as the Generate.py script.
+Make sure you have the **weights.h5** file available, either from training or downloaded from step 2, and that it is in the same directory as the Generate.py script.
 
 This script (computation time ~24 hours) will result in 7 files:
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
