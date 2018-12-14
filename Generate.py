@@ -1,21 +1,26 @@
 #!/usr/bin/python
 
 import os
-import sys
 import re
-import time
-import datetime
-import urllib.request
 import bs4
-import Bio.PDB
-import requests
+import sys
+import time
 import keras
+import Bio.PDB
+import datetime
+import requests
+import argparse
 import numpy as np
 import pandas as pd
+import urllib.request
 from Bio import pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
+
+parser = argparse.ArgumentParser(description='De Novo Protein Design Neural Network')
+parser.add_argument('-t', '--train', action='store_true', help='Train the neural network')
+args = parser.parse_args()
 
 class RosettaDesign():
 	'''
@@ -1336,7 +1341,7 @@ def FoldPDB(data):
 	relax.apply(pose)
 	pose.dump_pdb('Backbone.pdb')
 
-def DCGAN():
+def DCGAN(choice):
 	#https://github.com/hyperopt/hyperopt
 	#https://towardsdatascience.com/what-are-hyperparameters-and-how-to-tune-the-hyperparameters-in-a-deep-neural-network-d0604917584a
 	#https://machinelearningmastery.com/grid-search-hyperparameters-deep-learning-models-python-keras/
@@ -1400,43 +1405,49 @@ def DCGAN():
 	AM.add(G)
 	AM.add(D)
 	AM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
-	#Training
-	for epoch in range(epochs):
-		#Generate a fake structures
-		real = X[np.random.randint(0, X.shape[0], size=batchs)]
-		noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
-		fake = G.predict(noise)
-		#Train discriminator
-		x = np.concatenate((real, fake))
-		y = np.ones([2*batchs, 1])
-		y[batchs:, :] = 0
-		d_loss = DM.train_on_batch(x, y)
-		#Train adversarial
-		y = np.ones([batchs, 1])
-		a_loss = AM.train_on_batch(noise, y)
-		D_loss = round(float(d_loss[0]), 3)
-		D_accu = round(float(d_loss[1]), 3)
-		A_loss = round(float(a_loss[0]), 3)
-		print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
-		#Save Model
-		G.save_weights('DCGAN_PS.h5')
-	noise = np.random.normal(0.5, 0.5, (1, 100))
-	gen = G.predict(noise)
-	gen = gen.reshape([300])
-	gen = np.ndarray.tolist(gen)
-	phiout = gen[0::2]		#[start:end:step]
-	psiout = gen[1::2]		#[start:end:step]
-	#Re-normalise
-	phiout = [x*360.0 for x in phiout]
-	psiout = [x*360.0 for x in psiout]
-	return(phiout, psiout)
+	if choice == 'training':
+		#Training
+		for epoch in range(epochs):
+			#Generate a fake structures
+			real = X[np.random.randint(0, X.shape[0], size=batchs)]
+			noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
+			fake = G.predict(noise)
+			#Train discriminator
+			x = np.concatenate((real, fake))
+			y = np.ones([2*batchs, 1])
+			y[batchs:, :] = 0
+			d_loss = DM.train_on_batch(x, y)
+			#Train adversarial
+			y = np.ones([batchs, 1])
+			a_loss = AM.train_on_batch(noise, y)
+			D_loss = round(float(d_loss[0]), 3)
+			D_accu = round(float(d_loss[1]), 3)
+			A_loss = round(float(a_loss[0]), 3)
+			print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch, D_loss, D_accu, A_loss))
+			#Save Model
+			G.save_weights('weights.h5')
+	elif choice == 'generate':
+		#Generate
+		G.load_weights('weights.h5')
+		noise = np.random.normal(0.5, 0.5, (1, 100))
+		gen = G.predict(noise)
+		gen = gen.reshape([300])
+		gen = np.ndarray.tolist(gen)
+		phiout = gen[0::2]		#[start:end:step]
+		psiout = gen[1::2]		#[start:end:step]
+		#Re-normalise
+		phiout = [x*360.0 for x in phiout]
+		psiout = [x*360.0 for x in psiout]
+		return(phiout, psiout)
 
 def main():
-	data = DCGAN()
-	FoldPDB(data)
-	RD = RosettaDesign()
-	RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
-#	Fragments('structure.pdb')
+	if args.train:
+		data = DCGAN('train')
+	else:
+		data = DCGAN('generate')
+		FoldPDB(data)
+		RD = RosettaDesign()
+		RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
+		Fragments('structure.pdb')
 
-if __name__ == '__main__':
-	main()
+if __name__ == '__main__': main()
