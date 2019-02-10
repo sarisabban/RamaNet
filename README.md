@@ -25,7 +25,7 @@ But if you want to replicate my work use the following command to generate the M
 
 `python3 Database.py`
 
-The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, that have more helices and strands than loops (a rigid structure), and with an Rg value of less than 15 (compact structure). The script results in a dataset with the first column as the training example number, then the PDB ID of the file (and chain letter), then the angles *Phi* and *Psi* for each amino acid. *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occur, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file. 
+The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, that have more helices and strands than loops (a rigid structure), and with an Rg value of less than 15 (compact structure). The script results in a dataset with the first column as the training example number, then the PDB ID of the file (and chain letter), then the angles *Phi/Psi* for each amino acid. *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occur, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file. 
 
 The dataset generation protocol is as follows:
 * Download the PDB database
@@ -41,7 +41,7 @@ The dataset generation protocol is as follows:
 * Make a list of all paths (if next step is performed in a high performance computer HPC)
 * Generate HPC submission file (PBS job scheduler)
 * Relax each structure (on a HPC or a local computer)
-* Get each residue's phi and psi angles
+* Get each residue's phi/psi angles
 
 The most difficult step is the *Human Eye Filtering* step which requires a person to filter out all the unwanted structures manually before moving onto cleaning up each structure and augmenting the data which eventually results in a .csv file. Unwanted structures such as non-compact structures, structures with more loops than helices and sheets, weird looking structures. Also, this is the step to separate structures and collect the ones with traits that you need; I decided to separate the dataset into structures with only helices, only sheet, and a mix of the two before augmenting each dataset. This was in order to walk the neural network slowly through the training process. The separation was done manually.
 
@@ -53,7 +53,7 @@ It is best to contact me if you want to generate your own database and I will wa
 
 But if you want to replicate my work you can use the following command to train the neural network in the dataset:
 
-`python3 Generate.py --train`
+`python3 Generate.py --train` or `python3 Generate.py -t`
 
 3. Use the following command to generate a novel protein structure:
 
@@ -69,6 +69,10 @@ This script (computation time ~24 hours) will result in 7 files:
 
 
 
+
+
 # Notes
 **This script is still under development. This statement will be removed when the script is completed and bench marked.**
+**Choose PS or PSC datasets**
 **When/if this project is completed, I will make a video explaining it.**
+
