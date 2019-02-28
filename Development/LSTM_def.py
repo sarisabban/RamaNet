@@ -31,8 +31,8 @@ def LSTM_GAN(choice):
 		scorefxn = get_fa_scorefxn()
 		relax = pyrosetta.rosetta.protocols.relax.FastRelax(scorefxn)
 		pose.dump_pdb('temp1.pdb')
-		structure = Bio.PDB.PDBParser().get_structure('temp', 'temp.pdb')
-		dssp = Bio.PDB.DSSP(structure[0], 'temp.pdb', acc_array='Wilke')
+		structure = Bio.PDB.PDBParser().get_structure('temp1', 'temp1.pdb')
+		dssp = Bio.PDB.DSSP(structure[0], 'temp1.pdb', acc_array='Wilke')
 		ppb = Bio.PDB.Polypeptide.PPBuilder()
 		chain = ppb.build_peptides(structure, aa_only=False)[0]
 		SS = []
