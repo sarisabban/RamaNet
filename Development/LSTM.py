@@ -58,8 +58,19 @@ def FoldPDB_PS(data):
 	io.save('temp2.pdb')
 	os.remove('temp.pdb')
 	pose = pose_from_pdb('temp2.pdb')
+	# Just relax once is enough
 	relax.apply(pose)
-	# Try Simulated Annealing Relax <-------------------------------------------------------------------------------------- ADD LATER
+	# Simulated annealing relax (not nessesary)
+	'''
+	pose_R = Pose()
+	for i in range(20):
+		pose_R.assign(pose)
+		score_B = scorefxn(pose)
+		relax.apply(pose_R)
+		score_A = scorefxn(pose_R)
+		if score_A < score_B:
+			pose.assign(pose_R)
+	'''
 	pose.dump_pdb('Backbone.pdb')
 	os.remove('temp2.pdb')
 
@@ -140,7 +151,8 @@ def Filter(TheFile):
 	H = SS.count('H')
 	S = SS.count('S')
 	L = SS.count('L')
-	#IF LENGTH IS < 80 AA   <-------------------------------------------------------------------------------------- ADD LATER
+	if len(SS) < 80:
+		choice = False
 	if H+S < L:
 		choice = False
 	Surface = SASA.count('S')
@@ -329,4 +341,16 @@ def main(choice):
 			else:
 				os.remove('Backbone.pdb')
 
-if __name__ == '__main__': main(sys.argv[1])
+#if __name__ == '__main__': main(sys.argv[1])
+
+newfile = open('result.txt', 'r')
+phiout = []
+psiout = []
+for line in newfile:
+	line = line.strip().split(';')
+	phiout.append(float(line[0]))
+	psiout.append(float(line[1]))
+phiout = [x*360.0 for x in phiout]
+psiout = [x*360.0 for x in psiout]
+data = (phiout, psiout)
+FoldPDB_PS(data)
