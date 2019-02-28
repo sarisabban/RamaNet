@@ -8,24 +8,27 @@ Preforms *De Novo* Design using Machine Learning and PyRosetta to generate a nov
 `sudo apt update && sudo apt full-upgrade && sudo apt install dssp gnuplot python3-biopython python3-pandas python3-numpy python3-matplotlib python3-bs4 python3-lxml python3-scipy python3-keras python3-tqdm`
 
 ## Description:
-This is a script that uses Machine Learning (a GAN network) and PyRosetta to preform *De Novo* Protein Design (from the beginning) i.e. generate and design a synthetic protein structure completely computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits this topology. It then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragment files in preparation for an **Abinitio** fold simulation. The **Abinitio** script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the **Abinitio** fold simulation might go (ideally you want an average RMSD < 2Å).
+This is a script that uses Machine Learning (a GAN network) and PyRosetta to preform *De Novo* Protein Design (from the beginning) i.e. generate and design a synthetic protein structure completely computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits this topology. It then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragment files in preparation for an *Abinitio* folding simulation. The *Abinitio* script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment's position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the *Abinitio* folding simulation might go (ideally you want an average RMSD < 2Å).
 
 The script will generate one structure. It is advised to run this script and generate multiple structures and see which one has the lowest average RMSD fragments. But mind you, if you generate too many structures this might overwhelm the Robetta server by submitting and requesting too many fragment files, please be considerate and run this script once to generate one structure at a time only.
 
 ## How To Use:
-1. You do not need to generate the Machine Learning Datasets, it is already provided and can be downloaded here:
+1. You do not need to generate the Machine Learning datasets, they are already provided and can be downloaded here:
 
-[Helix dataset](https://www.dropbox.com/s/a136j5jejgqj99a/dataPS_helix_500.csv?dl=0)
+[Helix PS dataset](https://www.dropbox.com/s/a136j5jejgqj99a/dataPS_helix_500.csv?dl=0)
+[Helix PSC dataset]()
 
-[Sheet dataset](https://www.dropbox.com/s/mwrbvqg91zzzfqa/dataPS_sheet_500.csv?dl=0)
+[Sheet PS dataset](https://www.dropbox.com/s/mwrbvqg91zzzfqa/dataPS_sheet_500.csv?dl=0)
+[Sheet PSC dataset]()
 
-[Mix dataset](https://www.dropbox.com/s/w072hvnj63ag0u7/dataPS_mix_500.csv?dl=0)
+[Mix PS dataset](https://www.dropbox.com/s/w072hvnj63ag0u7/dataPS_mix_500.csv?dl=0)
+[Mix PSC dataset]()
 
-But if you want to replicate my work use the following command to generate the Machine Learning Dataset from the Protein Databank Database (computation time ~168 hours and requires more than 128GB of free disk space):
+But if you want to replicate our work use the following command to generate the Machine Learning dataset from the Protein Databank Database (computation time ~168 hours and requires more than 128GB of free disk space):
 
 `python3 Database.py`
 
-The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, that have more helices and strands than loops (a rigid structure), and with an Rg value of less than 15 (compact structure). The script results in a dataset with the first column as the training example number, then the PDB ID of the file (and chain letter), then the angles *Phi/Psi* for each amino acid. *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occur, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file. 
+The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, that have more helices and strands than loops (a rigid structure), and with an Rg value of less than 15 (compact structure). The script results in a dataset with the first column as the training example number, then the PDB ID of the file (and chain letter), then the angles *Phi/Psi* for each amino acid (PS dataset), an option is to also include the cst constraint values between carbon-alpha 1 and all other carbon-alphas (PSC dataset). *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occur, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file. 
 
 The dataset generation protocol is as follows:
 * Download the PDB database
@@ -40,8 +43,8 @@ The dataset generation protocol is as follows:
 * Clean every structure in the database
 * Make a list of all paths (if next step is performed in a high performance computer HPC)
 * Generate HPC submission file (PBS job scheduler)
-* Relax each structure (on a HPC or a local computer)
-* Get each residue's phi/psi angles
+* Relax each structure multiple times (on a HPC or a local computer), this is to augment the examples
+* Get each residue's phi/psi angles (and constraints if required - you have to comment in and out the relevent functions at the end of the script)
 
 The most difficult step is the *Human Eye Filtering* step which requires a person to filter out all the unwanted structures manually before moving onto cleaning up each structure and augmenting the data which eventually results in a .csv file. Unwanted structures such as non-compact structures, structures with more loops than helices and sheets, weird looking structures. Also, this is the step to separate structures and collect the ones with traits that you need; I decided to separate the dataset into structures with only helices, only sheet, and a mix of the two before augmenting each dataset. This was in order to walk the neural network slowly through the training process. The separation was done manually.
 
@@ -51,7 +54,7 @@ It is best to contact me if you want to generate your own database and I will wa
 
 [Weights]()
 
-But if you want to replicate my work you can use the following command to train the neural network in the dataset:
+But if you want to replicate our work you can use the following command to train the neural network in the dataset:
 
 `python3 Generate.py --train` or `python3 Generate.py -t`
 
@@ -59,7 +62,7 @@ But if you want to replicate my work you can use the following command to train 
 
 `python3 Generate.py`
 
-Make sure you have the **weights.h5** file available, either from training or downloaded from step 2, and that it is in the same directory as the Generate.py script.
+Make sure you have the **weights** available, either from training or downloaded from step 2, and that it is in the same directory as the Generate.py script.
 
 This script (computation time ~24 hours) will result in 7 files:
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
