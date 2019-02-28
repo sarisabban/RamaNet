@@ -8,11 +8,11 @@ from pyrosetta import *
 from pyrosetta.toolbox import *
 init()
 
-TRAIN_DATA_FILE = './PS_Helix_500.csv'					# Dataset location
-NUM_EPOCHS = 3000										# Number of training epochs
-MAX_ATOMS = 150											# Maximum protein chain length
-SEQ_LEN = MAX_ATOMS * 2									# Total prediction sequence length (2 angles per atom)
-N_STRUCTURES = 1										# Number of structures to predict
+TRAIN_DATA_FILE = './PS_Helix_500.csv'	# Dataset location
+NUM_EPOCHS = 3000						# Number of training epochs
+MAX_ATOMS = 150							# Maximum protein chain length
+SEQ_LEN = MAX_ATOMS * 2					# Total prediction sequence length (2 angles per atom)
+N_STRUCTURES = 1						# Number of structures to predict
 
 def FoldPDB_PS(data):
 	size = int(len(data[0]))
@@ -37,12 +37,9 @@ def FoldPDB_PS(data):
 	chain = ppb.build_peptides(structure, aa_only=False)[0]
 	SS = []
 	for aa in dssp:
-		if aa[2] == 'G' or aa[2] == 'H' or aa[2] == 'I':
-			SSname = 'H'
-		elif aa[2] == 'B' or aa[2] == 'E':
-			SSname = 'S'
-		else:
-			SSname = 'L'
+		if aa[2] == 'G' or aa[2] == 'H' or aa[2] == 'I': SSname = 'H'
+		elif aa[2] == 'B' or aa[2] == 'E': SSname = 'S'
+		else: SSname = 'L'
 		SS.append(SSname)
 	# Adjust End
 	for i in enumerate(reversed(SS)):
@@ -342,15 +339,3 @@ def main(choice):
 				os.remove('Backbone.pdb')
 
 #if __name__ == '__main__': main(sys.argv[1])
-
-newfile = open('result.txt', 'r')
-phiout = []
-psiout = []
-for line in newfile:
-	line = line.strip().split(';')
-	phiout.append(float(line[0]))
-	psiout.append(float(line[1]))
-phiout = [x*360.0 for x in phiout]
-psiout = [x*360.0 for x in psiout]
-data = (phiout, psiout)
-FoldPDB_PS(data)
