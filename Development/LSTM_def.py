@@ -9,6 +9,9 @@ from pyrosetta.toolbox import *
 init()
 
 def LSTM_GAN(choice):
+	'''
+	A neural network that designs a helical protein topology using phi/psi angels
+	'''
 	TRAIN_DATA_FILE = './PS_Helix_500.csv'	# Dataset location
 	NUM_EPOCHS = 3000						# Number of training epochs
 	MAX_ATOMS = 150							# Maximum protein chain length
