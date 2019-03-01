@@ -49,6 +49,13 @@ def FoldPDB_PSC(data):
 	os.remove('constraints.cst')
 
 def DCGAN_PSC(choice, filename, CSTmax):
+	#Network values
+	shape = (150, 3)
+	latent = 100
+	batchs = 32
+	epochs = 1000
+	Disclr = 0.00001
+	Advrlr = 0.00001
 	# Import data
 	data = pd.read_csv(filename, ';')
 	# Convert data into numpy arrays
@@ -63,11 +70,6 @@ def DCGAN_PSC(choice, filename, CSTmax):
 	X = np.array([phi, psi, cst])	# Shape = (3, 82900, 150)
 	X = np.swapaxes(X, 0, 2)		# Change shape to (150, 82900, 3)
 	X = np.swapaxes(X, 0, 1)		# Change shape to (82900, 150, 3)
-	#Network values
-	shape = (150, 3)
-	latent = 100
-	batchs = 32
-	epochs = 1000
 	#Discriminator - VGG19
 	D = keras.models.Sequential()
 	D.add(keras.layers.Conv1D(64, kernel_size=3, input_shape=shape))
@@ -124,12 +126,12 @@ def DCGAN_PSC(choice, filename, CSTmax):
 	#Discriminator Model
 	DM = keras.models.Sequential()
 	DM.add(D)
-	DM.compile(optimizer=keras.optimizers.Adam(0.00001), loss='mean_squared_error', metrics=['accuracy'])
+	DM.compile(optimizer=keras.optimizers.Adam(Disclr), loss='mean_squared_error', metrics=['accuracy'])
 	#Adversarial Model
 	AM = keras.models.Sequential()
 	AM.add(G)
 	AM.add(D)
-	AM.compile(optimizer=keras.optimizers.Adam(0.00001), loss='mean_squared_error', metrics=['accuracy'])
+	AM.compile(optimizer=keras.optimizers.Adam(Advrlr), loss='mean_squared_error', metrics=['accuracy'])
 	if choice == 'train':
 		#Training
 		for epoch in range(epochs):
@@ -148,8 +150,8 @@ def DCGAN_PSC(choice, filename, CSTmax):
 			D_loss = round(float(d_loss[0]), 3)
 			D_accu = round(float(d_loss[1]), 3)
 			A_loss = round(float(a_loss[0]), 3)
-			#print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch+1, D_loss, D_accu, A_loss))
-			print('{:7} [D loss: {:.3f}] [G loss: {:.3f}]'.format(epoch+1, D_loss, A_loss))
+			#print('{:7} [D loss: {:.7f}, accuracy: {:.7f}] [A loss: {:.7f}]'.format(epoch+1, D_loss, D_accu, A_loss))
+			print('{:7} [Discriminator loss: {:.7f}] [Adversarial loss: {:.7f}]'.format(epoch+1, D_loss, A_loss))
 			#Save Model
 			G.save_weights('weights.h5')
 	elif choice == 'generate':
