@@ -15,14 +15,17 @@ The script will generate one structure. It is advised to run this script and gen
 ## How To Use:
 1. You do not need to generate the Machine Learning datasets, they are already provided and can be downloaded here:
 
-[Helix PS dataset](https://www.dropbox.com/s/a136j5jejgqj99a/dataPS_helix_500.csv?dl=0)
-[Helix PSC dataset]()
+[Helix PS dataset](https://www.dropbox.com/s/a136j5jejgqj99a/PS_Helix_500.csv?dl=0)
 
-[Sheet PS dataset](https://www.dropbox.com/s/mwrbvqg91zzzfqa/dataPS_sheet_500.csv?dl=0)
-[Sheet PSC dataset]()
+[Helix PSC dataset](https://www.dropbox.com/s/3mg6edh933uhzu8/PSC_Helix_500.csv?dl=0)
 
-[Mix PS dataset](https://www.dropbox.com/s/w072hvnj63ag0u7/dataPS_mix_500.csv?dl=0)
-[Mix PSC dataset]()
+[Sheet PS dataset](https://www.dropbox.com/s/mwrbvqg91zzzfqa/PS_Sheet_500.csv?dl=0)
+
+[Sheet PSC dataset](https://www.dropbox.com/s/ws1zelxl2jm1n3j/PSC_Sheet_500.csv?dl=0)
+
+[Mix PS dataset](https://www.dropbox.com/s/w072hvnj63ag0u7/PS_Mix_500.csv?dl=0)
+
+[Mix PSC dataset](https://www.dropbox.com/s/qz35dsgvs91wsjz/PSC_Mix_500.csv?dl=0)
 
 But if you want to replicate our work use the following command to generate the Machine Learning dataset from the Protein Databank Database (computation time ~168 hours and requires more than 128GB of free disk space):
 
@@ -52,7 +55,8 @@ It is best to contact me if you want to generate your own database and I will wa
 
 2. You do not need to train the neural neural network because it is already trained and the weights file is available here:
 
-[Weights]()
+[PS Neural Network Weights](https://www.dropbox.com/s/mq0f3fr16zcrutb/weights.zip?dl=0)
+[PSC Neural Network Weights]()
 
 But if you want to replicate our work you can use the following command to train the neural network in the dataset:
 
@@ -76,6 +80,5 @@ This script (computation time ~24 hours) will result in 7 files:
 
 # Notes
 **This script is still under development. This statement will be removed when the script is completed and bench marked.**
-**Choose PS or PSC datasets**
 **When/if this project is completed, I will make a video explaining it.**
 
