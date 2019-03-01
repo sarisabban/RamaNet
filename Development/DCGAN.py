@@ -124,16 +124,16 @@ def DCGAN_PSC(choice, filename, CSTmax):
 	#Discriminator Model
 	DM = keras.models.Sequential()
 	DM.add(D)
-	DM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
+	DM.compile(optimizer=keras.optimizers.Adam(0.00001), loss='mean_squared_error', metrics=['accuracy'])
 	#Adversarial Model
 	AM = keras.models.Sequential()
 	AM.add(G)
 	AM.add(D)
-	AM.compile(optimizer=keras.optimizers.Adam(0.001), loss='binary_crossentropy', metrics=['accuracy'])
+	AM.compile(optimizer=keras.optimizers.Adam(0.00001), loss='mean_squared_error', metrics=['accuracy'])
 	if choice == 'train':
 		#Training
 		for epoch in range(epochs):
-			#Generate a fake structures
+			#Generate a fake structure
 			real = X[np.random.randint(0, X.shape[0], size=batchs)]
 			noise = np.random.uniform(0.0, 1.0, size=[batchs, 100])
 			fake = G.predict(noise)
@@ -148,7 +148,8 @@ def DCGAN_PSC(choice, filename, CSTmax):
 			D_loss = round(float(d_loss[0]), 3)
 			D_accu = round(float(d_loss[1]), 3)
 			A_loss = round(float(a_loss[0]), 3)
-			print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch+1, D_loss, D_accu, A_loss))
+			#print('{:7} [D loss: {:.3f}, accuracy: {:.3f}] [G loss: {:.3f}]'.format(epoch+1, D_loss, D_accu, A_loss))
+			print('{:7} [D loss: {:.3f}] [G loss: {:.3f}]'.format(epoch+1, D_loss, A_loss))
 			#Save Model
 			G.save_weights('weights.h5')
 	elif choice == 'generate':
