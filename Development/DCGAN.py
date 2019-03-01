@@ -54,7 +54,7 @@ def DCGAN_PSC(choice, filename, CSTmax):
 	latent = 100
 	batchs = 32
 	epochs = 1000
-	Disclr = 0.00001
+	Disclr = 0.000001
 	Advrlr = 0.00001
 	# Import data
 	data = pd.read_csv(filename, ';')
