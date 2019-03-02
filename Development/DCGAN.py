@@ -150,8 +150,8 @@ def DCGAN_PSC(choice, filename, CSTmax):
 			D_loss = round(float(d_loss[0]), 3)
 			D_accu = round(float(d_loss[1]), 3)
 			A_loss = round(float(a_loss[0]), 3)
-			#print('{:7} [D loss: {:.7f}, accuracy: {:.7f}] [A loss: {:.7f}]'.format(epoch+1, D_loss, D_accu, A_loss))
-			print('{:7} [Discriminator loss: {:.7f}] [Adversarial loss: {:.7f}]'.format(epoch+1, D_loss, A_loss))
+			#if epoch % 100==0: print('{:7} [D loss: {:.7f}, accuracy: {:.7f}] [A loss: {:.7f}]'.format(epoch, D_loss, D_accu, A_loss))
+			if epoch % 100==0: print('Epoch {:5} Discriminator loss: {:.5f} ||| Adversarial loss: {:.5f}'.format(epoch, D_loss, A_loss))
 			#Save Model
 			G.save_weights('weights.h5')
 	elif choice == 'generate':
