@@ -1,52 +1,6 @@
 import keras
 import numpy as np
 import pandas as pd
-from pyrosetta import *
-from pyrosetta.toolbox import *
-init()
-
-def FoldPDB_PSC(data):
-	size = int(len(data[0]))
-	Vs = list()
-	for numb in range(size):
-		Vs.append('V')
-	sequence = ''.join(Vs)
-	pose = pose_from_sequence(sequence)
-	PHI = data[0]
-	PSI = data[1]
-	CST = data[2]
-	count = 1
-	for P, S in zip(PHI, PSI):
-		pose.set_phi(count, float(P))
-		pose.set_psi(count, float(S))
-		count += 1
-	atom = 1
-	for cst in CST:
-		line = 'AtomPair CA 1 CA '+str(atom)+' GAUSSIANFUNC '+str(cst)+' 1.0\n'
-		thefile = open('constraints.cst', 'a')
-		thefile.write(line)
-		thefile.close()
-		atom += 1
-	constraints = pyrosetta.rosetta.protocols.constraint_movers.ConstraintSetMover()
-	constraints.constraint_file('constraints.cst')
-	constraints.add_constraints(True)
-	constraints.apply(pose)
-	scorefxnCST = ScoreFunction()
-	scorefxnCST.set_weight(pyrosetta.rosetta.core.scoring.ScoreType.atom_pair_constraint, 1.0)
-	relaxCST = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relaxCST.set_scorefxn(scorefxnCST)
-	relaxCST.constrain_relax_to_start_coords(True)
-	relaxCST.constrain_coords(True)
-	scorefxn = get_fa_scorefxn()
-	relaxC = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relaxC.set_scorefxn(scorefxn)
-	relaxC.constrain_relax_to_start_coords(True)
-	relaxC.constrain_coords(True)
-	relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-	relax.set_scorefxn(scorefxn)
-#	relaxC.apply(pose)
-	pose.dump_pdb('Backbone.pdb')
-	os.remove('constraints.cst')
 
 def DCGAN_PSC(choice, filename, CSTmax):
 	#Network values
@@ -54,8 +8,8 @@ def DCGAN_PSC(choice, filename, CSTmax):
 	latent = 100
 	batchs = 32
 	epochs = 1000
-	Disclr = 0.000001
-	Advrlr = 0.00001
+	Disclr = 1e-7
+	Advrlr = 1e-7
 	# Import data
 	data = pd.read_csv(filename, ';')
 	# Convert data into numpy arrays
@@ -171,5 +125,4 @@ def DCGAN_PSC(choice, filename, CSTmax):
 		return(phiout, psiout, cstout)
 
 DCGAN_PSC('train', 'PSC_Helix_5.csv', 88.731)
-data = DCGAN_PSC('generate', 'PSC_Helix_500.csv', 88.731)
-FoldPDB_PSC(data)
+DCGAN_PSC('generate', 'PSC_Helix_500.csv', 88.731)
