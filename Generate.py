@@ -1956,7 +1956,7 @@ def main():
 		LSTM_GAN('train')
 	else:
 		LSTM_GAN('predict')
-		RD = RosettaDesign()
+		RD = MCRosettaDesign()
 		RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
 		Fragments('structure.pdb')
 
