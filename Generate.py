@@ -13,6 +13,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import urllib.request
+import tensorflow as tf
 from Bio import pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
@@ -1951,7 +1952,7 @@ def DCGAN_PSC(choice, filename, CSTmax):
 		return(phiout, psiout, cstout)
 
 def main():
-	cst = CSTMax('dataset.csv')
+#	cst = CSTMax('dataset.csv')
 	if args.train:
 		LSTM_GAN('train')
 	else:
