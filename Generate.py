@@ -1480,18 +1480,21 @@ def LSTM_GAN(choice):
 			else: SSname = 'L'
 			SS.append(SSname)
 		# Adjust End
-		for i in enumerate(reversed(SS)):
-			if i[1] != 'L':
-				num = i[0]
-				break
-		for model in structure:
-			for chain in model:
-				for i in reversed(range(150-num, 150+1)):
-					chain.detach_child((' ', i, ' '))
-		io = Bio.PDB.PDBIO()
-		io.set_structure(structure)
-		io.save('temp2.pdb')
-		os.remove('temp1.pdb')
+		try:
+			for i in enumerate(reversed(SS)):
+				if i[1] != 'L':
+					num = i[0]
+					break
+			for model in structure:
+				for chain in model:
+					for i in reversed(range(150-num, 150+1)):
+						chain.detach_child((' ', i, ' '))			
+			io = Bio.PDB.PDBIO()
+			io.set_structure(structure)
+			io.save('temp2.pdb')
+			os.remove('temp1.pdb')
+		except:
+			os.remove('temp1.pdb')
 		pose = pose_from_pdb('temp2.pdb')
 		# Just relax once is enough
 		relax.apply(pose)
