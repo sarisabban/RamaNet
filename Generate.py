@@ -1493,24 +1493,24 @@ def LSTM_GAN(choice):
 			io.set_structure(structure)
 			io.save('temp2.pdb')
 			os.remove('temp1.pdb')
+			pose = pose_from_pdb('temp2.pdb')
+			# Just relax once is enough
+			relax.apply(pose)
+			# Simulated annealing relax (not nessesary)
+			'''
+			pose_R = Pose()
+			for i in range(20):
+				pose_R.assign(pose)
+				score_B = scorefxn(pose)
+				relax.apply(pose_R)
+				score_A = scorefxn(pose_R)
+				if score_A < score_B:
+					pose.assign(pose_R)
+			'''
+			pose.dump_pdb('Backbone.pdb')
+			os.remove('temp2.pdb')
 		except:
 			os.remove('temp1.pdb')
-		pose = pose_from_pdb('temp2.pdb')
-		# Just relax once is enough
-		relax.apply(pose)
-		# Simulated annealing relax (not nessesary)
-		'''
-		pose_R = Pose()
-		for i in range(20):
-			pose_R.assign(pose)
-			score_B = scorefxn(pose)
-			relax.apply(pose_R)
-			score_A = scorefxn(pose_R)
-			if score_A < score_B:
-				pose.assign(pose_R)
-		'''
-		pose.dump_pdb('Backbone.pdb')
-		os.remove('temp2.pdb')
 	def Filter(TheFile):
 		'''
 		A function that filters protein structures
