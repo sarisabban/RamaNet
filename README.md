@@ -78,6 +78,12 @@ This script (computation time ~24 hours) will result in 7 files:
 
 
 
+## References:
+When using these scripts kindly reference the following:
+* 
+
+
+
 
 # Notes
 **This script is still under development. This statement will be removed when the script is completed and bench marked.**
