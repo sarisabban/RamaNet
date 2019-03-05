@@ -21,6 +21,7 @@ init()
 
 parser = argparse.ArgumentParser(description='De Novo Protein Design Neural Network')
 parser.add_argument('-t', '--train', action='store_true', help='Train the neural network')
+parser.add_argument('-f', '--fragments', action='store_true', help='Generate a structure and get its fragments from the Robetta server, you must specify a username')
 args = parser.parse_args()
 
 class RosettaDesign():
@@ -1973,11 +1974,16 @@ def main():
 #	cst = CSTMax('dataset.csv')
 	if args.train:
 		LSTM_GAN('train')
+	elif args.fragments:
+		LSTM_GAN('predict')
+		RD = MCRosettaDesign()
+		RD.flxbb('backbone.pdb', 1.0, 10, 100, 'structure')
+		choose('structure.fasc')
+		Fragments('structure.pdb', sys.argv[1])		
 	else:
 		LSTM_GAN('predict')
 		RD = MCRosettaDesign()
 		RD.flxbb('backbone.pdb', 1.0, 10, 100, 'structure')
 		choose('structure.fasc')
-		Fragments('structure.pdb', sys.argv[1])
 
 if __name__ == '__main__': main()
