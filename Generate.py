@@ -1503,7 +1503,7 @@ def LSTM_GAN(choice):
 			for model in structure:
 				for chain in model:
 					for i in reversed(range(150-num, 150+1)):
-						chain.detach_child((' ', i, ' '))			
+						chain.detach_child((' ', i, ' '))
 			io = Bio.PDB.PDBIO()
 			io.set_structure(structure)
 			io.save('temp2.pdb')
@@ -1522,7 +1522,7 @@ def LSTM_GAN(choice):
 				if score_A < score_B:
 					pose.assign(pose_R)
 			'''
-			pose.dump_pdb('Backbone.pdb')
+			pose.dump_pdb('backbone.pdb')
 			os.remove('temp2.pdb')
 		except:
 			os.remove('temp1.pdb')
@@ -1780,10 +1780,10 @@ def LSTM_GAN(choice):
 			data = (phiout, psiout)
 			FoldPDB_PS(data)
 			os.remove('prediction.txt')
-			if Filter('Backbone.pdb'):
+			if Filter('backbone.pdb'):
 				break
 			else:
-				os.remove('Backbone.pdb')
+				os.remove('backbone.pdb')
 
 def DCGAN_PS(choice, filename):
 	'''
@@ -1976,7 +1976,7 @@ def main():
 	else:
 		LSTM_GAN('predict')
 		RD = MCRosettaDesign()
-		RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
+		RD.flxbb('backbone.pdb', 1.0, 10, 100, 'structure')
 		choose('structure.fasc')
 		Fragments('structure.pdb', sys.argv[1])
 
