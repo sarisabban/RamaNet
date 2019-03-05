@@ -1,5 +1,5 @@
 # ProtAI
-Preforms *De Novo* Design using Machine Learning and PyRosetta to generate a novel synthetic protein structure.
+Preforms *De novo* design using machine learning and PyRosetta to generate a novel synthetic protein structure.
 
 ## Requirements:
 1. Install [PyRosetta](http://www.pyrosetta.org) as the website describes.
