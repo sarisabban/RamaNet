@@ -1159,7 +1159,7 @@ class MCRosettaDesign():
 		os.remove('blueprint')
 		os.remove('resfile')
 
-def Fragments(filename):
+def Fragments(filename, username):
 	'''
 	Submits the pose to the Robetta server
 	(http://www.robetta.org) for fragment generation that are
@@ -1176,18 +1176,16 @@ def Fragments(filename):
 	sequence = pose.sequence()
 	#Post
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
-	payload = {
-		'UserName':'ac.research',
-		'Email':'',
-		'Notes':'structure',
-		'Sequence':sequence,
-		'Fasta':'',
-		'Code':'',
-		'ChemicalShifts':'',
-		'NoeConstraints':'',
-		'DipolarConstraints':'',
-		'type':'submit'
-	}
+	payload = {	'UserName':		username,
+			'Email':		'',
+			'Notes':		'structure',
+			'Sequence':		sequence,
+			'Fasta':		'',
+			'Code':			'',
+			'ChemicalShifts':	'',
+			'NoeConstraints':	'',
+			'DipolarConstraints':	'',
+			'type':			'submit'}
 	session = requests.session()
 	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload , files=dict(foo='bar'))		
 	for line in response:
@@ -1980,6 +1978,6 @@ def main():
 		RD = MCRosettaDesign()
 		RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
 		choose('structure.fasc')
-		Fragments('structure.pdb')
+		Fragments('structure.pdb', sys.argv[1])
 
 if __name__ == '__main__': main()
