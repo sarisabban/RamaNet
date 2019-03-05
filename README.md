@@ -65,9 +65,9 @@ But if you want to replicate our work you can use the following command to train
 
 3. Use the following command to generate a novel protein structure:
 
-`python3 Generate.py`
+`python3 Generate.py USERNAME`
 
-Make sure you have the **weights** available, either from training or downloaded from step 2, and that it is in the same directory as the Generate.py script.
+Make sure you have the **weights** available, either from training or downloaded from step 2, and that it is in the same directory as the Generate.py script, USERNAME is the username at the Robetta server for fragment generation.
 
 This script (computation time ~24 hours) will result in 7 files:
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
