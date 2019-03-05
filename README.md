@@ -73,7 +73,7 @@ This script (computation time ~24 hours) will result in 7 files:
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
 * The final designed structure file - *RosettaDesign* (**structure.pdb**)
 * Abinitio input files (**structure.fasta**, **frags.200.3mers**, **frags.200.9mers**, **pre.psipred.ss2**)
-* Fragment quality plot (**plot_frag.pdb**)
+* Fragment quality plot (**plot_frag.pdf**)
 
 
 
