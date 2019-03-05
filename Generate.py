@@ -1334,6 +1334,23 @@ def CSTMax(filename):
 	maximum = max(maxline)
 	return(maximum)
 
+def choose(filename):
+	'''
+	A little function that chooses the lowest scoring structure from multiple structures
+	'''
+	data = open(filename, 'r')
+	next(data)
+	score = 0
+	name = None
+	for line in data:
+		line = line.strip().split()
+		if float(line[3]) < score:
+			score = float(line[3])
+			name = line[1]
+	os.system("find ./ -name '*.pdb' -not -name '{}' -exec rm {} \;".format(name, '{}'))
+	os.system('rm {}'.format(filename))
+	os.system('mv {} structure.pdb'.format(name))
+
 def FoldPDB_PS(data):
 	'''
 	Fold a primary structure using the phi and psi torsion
@@ -1962,6 +1979,7 @@ def main():
 		LSTM_GAN('predict')
 		RD = MCRosettaDesign()
 		RD.flxbb('Backbone.pdb', 1.0, 10, 100, 'structure')
+		choose('structure.fasc')
 		Fragments('structure.pdb')
 
 if __name__ == '__main__': main()
