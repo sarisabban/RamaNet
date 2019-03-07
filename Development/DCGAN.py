@@ -6,8 +6,8 @@ def DCGAN_PSC(choice, filename, CSTmax):
 	#Network values
 	shape = (150, 3)
 	latent = 100
-	batchs = 32
-	epochs = 1000
+	batchs = 128
+	epochs = 20000
 	Disclr = 1e-7
 	Advrlr = 1e-7
 	# Import data
@@ -105,9 +105,10 @@ def DCGAN_PSC(choice, filename, CSTmax):
 			D_accu = round(float(d_loss[1]), 3)
 			A_loss = round(float(a_loss[0]), 3)
 			#if epoch % 100==0: print('{:7} [D loss: {:.7f}, accuracy: {:.7f}] [A loss: {:.7f}]'.format(epoch, D_loss, D_accu, A_loss))
-			if epoch % 100==0: print('Epoch {:5} Discriminator loss: {:.5f} ||| Adversarial loss: {:.5f}'.format(epoch, D_loss, A_loss))
+			if epoch % 500==0: print('Epoch {:5}\tDiscriminator loss: {:.7f}   |   Adversarial loss: {:.7f}'.format(epoch, D_loss, A_loss))
 			#Save Model
 			G.save_weights('weights.h5')
+		print('---------------------------------------------------------------------------\nDone')
 	elif choice == 'generate':
 		#Generate
 		G.load_weights('weights.h5')
