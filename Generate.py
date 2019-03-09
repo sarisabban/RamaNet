@@ -1768,23 +1768,26 @@ def LSTM_GAN(choice):
 		Run(choice)
 	elif choice == 'predict':
 		while True:
-			Run(choice)
-			newfile = open('prediction.txt', 'r')
-			phiout = []
-			psiout = []
-			for line in newfile:
-				line = line.strip().split(';')
-				phiout.append(float(line[0]))
-				psiout.append(float(line[1]))
-			phiout = [x*360.0 for x in phiout]
-			psiout = [x*360.0 for x in psiout]
-			data = (phiout, psiout)
-			FoldPDB_PS(data)
-			os.remove('prediction.txt')
-			if Filter('backbone.pdb'):
-				break
-			else:
-				os.remove('backbone.pdb')
+			try:
+				Run(choice)
+				newfile = open('prediction.txt', 'r')
+				phiout = []
+				psiout = []
+				for line in newfile:
+					line = line.strip().split(';')
+					phiout.append(float(line[0]))
+					psiout.append(float(line[1]))
+				phiout = [x*360.0 for x in phiout]
+				psiout = [x*360.0 for x in psiout]
+				data = (phiout, psiout)
+				FoldPDB_PS(data)
+				os.remove('prediction.txt')
+				if Filter('backbone.pdb'):
+					break
+				else:
+					os.remove('backbone.pdb')
+			except:
+				continue
 
 def DCGAN_PS(choice, filename):
 	'''
