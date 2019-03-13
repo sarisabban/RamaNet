@@ -51,7 +51,7 @@ The dataset generation protocol is as follows:
 
 The most difficult step is the *Human Eye Filtering* step which requires a person to filter out all the unwanted structures manually before moving onto cleaning up each structure and augmenting the data which eventually results in a .csv file. Unwanted structures such as non-compact structures, structures with more loops than helices and sheets, weird looking structures. Also, this is the step to separate structures and collect the ones with traits that you need; I decided to separate the dataset into structures with only helices, only sheet, and a mix of the two before augmenting each dataset. This was in order to walk the neural network slowly through the training process. The separation was done manually.
 
-It is best to contact me if you want to generate your own database and I will walk you through the protocol, it is not difficult, but works on individual basis. If you contact me I can also identify what people do not understand about this particular script and I will be able to modify this README file to make it easier to use.
+It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate your own database and I will walk you through the protocol, it is not difficult, but works on individual basis. If you contact me I can also identify what people do not understand about this particular script and I will be able to modify this README file to make it easier to use.
 
 2. You do not need to train the neural neural network because it is already trained and the weights file is available here:
 
