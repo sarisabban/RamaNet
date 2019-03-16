@@ -2,4 +2,6 @@
 [X] ProteoGAN
 [X] MiraNet
 [ ] S2M2Net
-[ ] NatwiNet
+[ ] NatwiNet  -> means "we fold network"
+[ ] TsmmNet   -> means "design network"
+[ ] NsmmNet   -> means "we design network"
