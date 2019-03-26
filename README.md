@@ -8,15 +8,14 @@ Preforms *De novo* protein design using machine learning and PyRosetta to genera
 `sudo apt update && sudo apt full-upgrade && sudo apt install dssp gnuplot python3-pip && pip3 install biopython pandas numpy matplotlib tqdm beautifulsoup4 lxml scipy keras tensorflow`
 
 ## Description:
-This is a script that uses Machine Learning (a GAN network) and PyRosetta to preform *De Novo* Protein Design (from the beginning) i.e. generate and design a synthetic protein structure completely computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits this topology using the [RosettaDesign](https://github.com/sarisabban/rosettadesign) protocol. It then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragments files in preparation for an *Abinitio* folding simulation. The *Abinitio* protocol script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment's position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the *Abinitio* folding simulation might go (ideally you want an average RMSD < 2Å).
+This is a script that uses Machine Learning (a GAN network) and PyRosetta to preform *De Novo* Protein Design (from the beginning) i.e. generate and design a synthetic protein structure completely computationally. There is no input for this script, it autonomously generates a topology (random every time) then designs a sequence that fits the designed topology using the [RosettaDesign](https://github.com/sarisabban/rosettadesign) protocol. It then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragments files in preparation for an *Abinitio* folding simulation. The *Abinitio* protocol script can be found [here](https://github.com/sarisabban/RosettaAbinitio). Finally it calculates the RMSD for each fragment's position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the *Abinitio* folding simulation might go (ideally you want an average RMSD < 2Å).
 
 The script will generate one structure. It is advised to run this script and generate multiple structures and see which one has the lowest average RMSD fragments. But mind you, if you generate too many structures this might overwhelm the Robetta server by submitting and requesting too many fragment files, please be considerate and run this script once to generate one structure at a time only.
 
 ## How To Use:
-1. You do not need to generate the Machine Learning datasets, they are already provided and can be downloaded here:
+For a quick structure generation right now just skip to the last step (step 4).
 
-[//]: # (https://www.dropbox.com/s/l4mebkfrtbs04r5/PS_Helix_5.csv?dl=0)
-[//]: # (https://www.dropbox.com/s/c2fyaafs5bh91mv/PSC_Helix_5.csv?dl=0)
+1. You do not need to generate the Machine Learning datasets, they are already provided and can be downloaded here:
 
 [Helix PS dataset](https://www.dropbox.com/s/a136j5jejgqj99a/PS_Helix_500.csv?dl=0)
 
@@ -62,37 +61,28 @@ It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate
 
 [PSC Neural Network Weights]()
 
-But if you want to replicate our work you can use the following command to train the neural network in the dataset:
+You can use the following command to train the neural network on the dataset (whether you use ours or generate your own):
 
 `python3 Generate.py --train` or `python3 Generate.py -t`
 
 3. Use the following command to generate a novel protein structure, generate fragments from the Robetta server, download these fragment files, and analyse these fragments:
 
-`python3 Generate.py USERNAME`
+`python3 Generate.py --fragments USERNAME`
 
-4. Use the following command to generate a novel protein structure:
+USERNAME is the username at the Robetta server for fragment generation.
+
+4. Use the following command to only generate a novel protein structure without generating any fragments:
 
 `python3 Generate.py`
 
-Make sure you have the **weights** available, either from training or downloaded from step 2, and that it is in the same directory as the Generate.py script, USERNAME is the username at the Robetta server for fragment generation.
+Make sure you have the **weights** available, either from your training or downloaded from step 2 (provided by us), and that it is in the same directory as the Generate.py script.
 
-This script (computation time ~24 hours) will result in 7 files (if fragments are requested), or a single file (if no fragments are requested):
+This script (computation time ~24 hours) will result in 1 file (if no fragments are requested), or 7 files (if fragments are requested):
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
 * The final designed structure file - *RosettaDesign* (**structure.pdb**)
 * Abinitio input files (**structure.fasta**, **frags.200.3mers**, **frags.200.9mers**, **pre.psipred.ss2**)
 * Fragment quality plot (**plot_frag.pdf**)
 
-
-
-
 ## References:
 When using these scripts kindly reference the following:
 * 
-
-
-
-
-# Notes
-**This script is still under development. This statement will be removed when the script is completed and bench marked.**
-**When/if this project is completed, I will make a video explaining it.**
-
