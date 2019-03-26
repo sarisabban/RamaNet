@@ -192,6 +192,11 @@ class RosettaDesign(object):
 		except:	os.system('rm fixbb_*')
 
 	def fixbb(self):
+		'''
+		Performs the RosettaDesign protocol to change a structure's
+		amino acid sequence while maintaining a fixed backbone.
+		Generates the structure.pdb file
+		'''
 		pose = pose_from_pdb(self.filename)
 		starting_pose = Pose()
 		starting_pose.assign(pose)
@@ -212,6 +217,11 @@ class RosettaDesign(object):
 		self.choose()
 
 	def flxbb(self):
+		'''
+		Performs the RosettaDesign protocol to change a structure's
+		amino acid sequence while allowing for a flexible backbone.
+		Generates the structure.pdb file
+		'''
 		pose = pose_from_pdb(self.filename)
 		starting_pose = Pose()
 		starting_pose.assign(pose)
