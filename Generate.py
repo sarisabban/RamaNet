@@ -169,13 +169,10 @@ class RosettaDesign(object):
 				line = '{} A PIKAA AVILFWM\n'.format(n)
 				resfile.write(line)
 		resfile.close()
-
 	def __del__(self):
 		''' Remove the resfile '''
 		os.remove('resfile')
-		try:	os.remove('fixbb.fasc')
-		except:	os.remove('flxbb.fasc')
-
+		for f in glob.glob('f[il]xbb.fasc'): os.remove(f)
 	def choose(self):
 		''' Choose the lowest scoring structure '''
 		try:	scorefile = open('fixbb.fasc', 'r')
@@ -190,7 +187,6 @@ class RosettaDesign(object):
 				name = line.get('decoy')
 		os.system('mv {} structure.pdb'.format(name))
 		for f in glob.glob('f[il]xbb_*'): os.remove(f)
-
 	def fixbb(self):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
@@ -215,7 +211,6 @@ class RosettaDesign(object):
 			relax.apply(pose)
 			job.output_decoy(pose)
 		self.choose()
-
 	def flxbb(self):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
