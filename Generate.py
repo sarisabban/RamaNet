@@ -169,6 +169,7 @@ class RosettaDesign(object):
 				line = '{} A PIKAA AVILFWM\n'.format(n)
 				resfile.write(line)
 		resfile.close()
+		self.SASA = sasalist
 	def __del__(self):
 		''' Remove the resfile '''
 		os.remove('resfile')
