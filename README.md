@@ -1,4 +1,4 @@
-# ProtAI
+# RamaNet
 Preforms *De novo* protein design using machine learning and PyRosetta to generate a novel synthetic protein structure.
 
 ## Requirements:
