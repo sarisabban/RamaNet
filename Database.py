@@ -459,7 +459,7 @@ def DatasetPS(directory):
 				addition = 150 - len(angles)
 				zeros = list()
 				for adds in range(addition):
-					zeros.append('0.0;0.0;0.0')
+					zeros.append('0.0;0.0')
 				Zeros = ';'.join(zeros)
 				AngLine = Angles + ';' + Zeros
 			TheLine = str(count) + ';' + TheFile + ';' + AngLine + '\n'
