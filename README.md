@@ -19,11 +19,9 @@ For a quick structure generation right now just skip to the last step (step 4).
 
 | Dataset name                                                                        | Description                                                                |
 |-------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-|[Helix PS dataset](https://www.dropbox.com/s/a136j5jejgqj99a/PS_Helix_500.csv?dl=0)  | Dataset of only helical structures' Phi/Psi angles                         |
+|[Helix PS dataset](https://www.dropbox.com/s/33xwsnx50an6ft9/PS_Helix_500.csv?dl=0)  | Dataset of only helical structures' Phi/Psi angles                         |
 |[Helix PSC dataset](https://www.dropbox.com/s/3mg6edh933uhzu8/PSC_Helix_500.csv?dl=0)| Dataset of only helical structures' Phi/Psi angles and Constraints         |
-|[Sheet PS dataset](https://www.dropbox.com/s/mwrbvqg91zzzfqa/PS_Sheet_500.csv?dl=0)  | Dataset of only sheet structures' Phi/Psi angles                           |
 |[Sheet PSC dataset](https://www.dropbox.com/s/ws1zelxl2jm1n3j/PSC_Sheet_500.csv?dl=0)| Dataset of only sheet structures' Phi/Psi angles and Constraints           |
-|[Mix PS dataset](https://www.dropbox.com/s/w072hvnj63ag0u7/PS_Mix_500.csv?dl=0)      | Dataset of mixed helix and sheet structures' Phi/Psi angles                |
 |[Mix PSC dataset](https://www.dropbox.com/s/qz35dsgvs91wsjz/PSC_Mix_500.csv?dl=0)    | Dataset of mixed helix and sheet structures' Phi/Psi angles and Constraints|
 
 But if you want to replicate our work use the following command to generate the Machine Learning dataset from the Protein Databank Database (computation time ~168 hours and requires more than 128GB of free disk space):
@@ -56,7 +54,7 @@ It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate
 
 | Weights name                                                                 | Description                                                |
 |------------------------------------------------------------------------------|------------------------------------------------------------|
-|[Helix PS Weights](https://www.dropbox.com/s/mq0f3fr16zcrutb/weights.zip?dl=0)| Neural network weights generated from the Helix PS dataset |
+|[Helix PS Weights]()| Neural network weights generated from the Helix PS dataset |
 |[Helix PSC Weights]()                                                         | Neural network weights generated from the Helix PSC dataset|
 |[Sheet PSC Weights]()                                                         | Neural network weights generated from the Sheet PSC dataset|
 |[Mix PSC Weights]()                                                           | Neural network weights generated from the Mix PSC dataset  |

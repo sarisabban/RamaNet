@@ -431,28 +431,46 @@ def DatasetPS(directory):
 	data.close()
 	count = 1
 	for TheFile in tqdm.tqdm(pdbfilelist):
-		structure = Bio.PDB.PDBParser().get_structure('X' , TheFile)
-		dssp = Bio.PDB.DSSP(structure[0] , TheFile , acc_array = 'Wilke')
-		angles = list()
-		for aa in dssp:
-			phi = aa[4]
-			psi = aa[5]
-			angles.append(str(phi) + ';' + str(psi))
-		Angles = ';'.join(angles)
-		if len(angles) >= 150:
-			AngLine = Angles
-		else:
-			addition = 150 - len(angles)
-			zeros = list()
-			for adds in range(addition):
-				zeros.append('0.0;0.0')
-			Zeros = ';'.join(zeros)
-			AngLine = Angles + ';' + Zeros
-		data = open('dataPS.csv' , 'a')
-		data.write(str(count) + ';' + TheFile + ';' + AngLine + '\n')
-		data.close()
-		count += 1
-		
+		try:
+			structure = Bio.PDB.PDBParser(QUIET = True).get_structure('X' , TheFile)
+			dssp = Bio.PDB.DSSP(structure[0] , TheFile , acc_array = 'Wilke')
+			for aa in dssp:
+				length = aa[0]
+			phi = list()
+			psi = list()
+			for aa in dssp:
+				#Convert all phi angle values to 0 to 360 (rather than +180 to -180)
+				p = aa[4]
+				if p < 0:
+					p = p + 360
+				phi.append(p)
+				#Convert all psi angle values to 0 to 360 (rather than +180 to -180)
+				s = aa[5]
+				if s < 0:
+					s = s + 360
+				psi.append(s)
+			angles = list()
+			for P , S in zip(phi , psi):
+				angles.append(str(round(P , 3)) + ';' + str(round(S , 3)))
+			Angles = ';'.join(angles)
+			if len(angles) >= 150:
+				AngLine = Angles
+			else:
+				addition = 150 - len(angles)
+				zeros = list()
+				for adds in range(addition):
+					zeros.append('0.0;0.0;0.0')
+				Zeros = ';'.join(zeros)
+				AngLine = Angles + ';' + Zeros
+			TheLine = str(count) + ';' + TheFile + ';' + AngLine + '\n'
+			data = open('dataPS.csv' , 'a')
+			data.write(TheLine)
+			data.close()
+			count += 1
+		except Exception as Error:
+			print(Error)
+	os.system('mv dataPS.csv {}'.format(current))
+
 def DatasetPSOC(directory):
 	''' Get each residue's phi, psi, and omega angles as well as CA atom constraints (uses the PyRosetta library) '''
 	''' Generates a the dataPSOC.csv with the phi, psi, and omega angles as well as CA atom constraints for each amino acid '''
@@ -751,11 +769,11 @@ def main():
 
 	# Generate the dataset:
 	#----------------------
-	#DatasetPSC('PDBDatabase')					# 16. Get each residue's phi and psi angles as well as CA atom constraints
+	DatasetPSC('PDBDatabase')					# 16. Get each residue's phi and psi angles as well as CA atom constraints
 	#DatasetR('PDBDatabase')					# 17. Get the secondary structures and distances
 	#DatasetCA('PDBDatabase')					# 18. Get each residue's CA atom's XYZ coordinates
 	#DatasetPSO('PDBDatabase')					# 19. Get each residue's phi, psi, and omega angles
-	DatasetPS('PDBDatabase')					# 20. Get each residue's phi and psi angles
+	#DatasetPS('PDBDatabase')					# 20. Get each residue's phi and psi angles
 	#DatasetPSOC('PDBDatabase')					# 21. Get each residue's phi, psi, and omega angles as well as CA atom constraints
 	#Seq('PDBDatabase')							# 22. Get each protein's sequence
 	#SS('PDBDatabase')							# 23. Get each residue's secondary structure
