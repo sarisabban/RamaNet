@@ -54,7 +54,7 @@ It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate
 
 | Weights name                                                                          | Description                                                |
 |---------------------------------------------------------------------------------------|------------------------------------------------------------|
-|[Helix PS Weights](https://www.dropbox.com/s/6k3ha7mjdcy9729/PS_Helix_Weights.zip?dl=0)| Neural network weights generated from the Helix PS dataset |
+|[Helix PS Weights](https://www.dropbox.com/s/ojv1ugryj4tqpnm/PS_Helix_Weights.zip?dl=0)| Neural network weights generated from the Helix PS dataset |
 |[Helix PSC Weights]()                                                                  | Neural network weights generated from the Helix PSC dataset|
 |[Sheet PSC Weights]()                                                                  | Neural network weights generated from the Sheet PSC dataset|
 |[Mix PSC Weights]()                                                                    | Neural network weights generated from the Mix PSC dataset  |
