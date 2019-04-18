@@ -52,12 +52,12 @@ It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate
 
 2. You do not need to train the neural neural network because it is already trained and the weights file is available here:
 
-| Weights name                                                                 | Description                                                |
-|------------------------------------------------------------------------------|------------------------------------------------------------|
-|[Helix PS Weights]()| Neural network weights generated from the Helix PS dataset |
-|[Helix PSC Weights]()                                                         | Neural network weights generated from the Helix PSC dataset|
-|[Sheet PSC Weights]()                                                         | Neural network weights generated from the Sheet PSC dataset|
-|[Mix PSC Weights]()                                                           | Neural network weights generated from the Mix PSC dataset  |
+| Weights name                                                                          | Description                                                |
+|---------------------------------------------------------------------------------------|------------------------------------------------------------|
+|[Helix PS Weights](https://www.dropbox.com/s/6k3ha7mjdcy9729/PS_Helix_Weights.zip?dl=0)| Neural network weights generated from the Helix PS dataset |
+|[Helix PSC Weights]()                                                                  | Neural network weights generated from the Helix PSC dataset|
+|[Sheet PSC Weights]()                                                                  | Neural network weights generated from the Sheet PSC dataset|
+|[Mix PSC Weights]()                                                                    | Neural network weights generated from the Mix PSC dataset  |
 
 You can use the following command to train the neural network on the dataset (whether you use ours or generate your own):
 
@@ -73,7 +73,7 @@ USERNAME is the username at the Robetta server for fragment generation.
 
 `python3 Generate.py`
 
-Make sure you have the **weights** available, either from your training or downloaded from step 2 (provided by us), and that it is in the same directory as the Generate.py script.
+Make sure you have the **weights** directory available, either from your training or downloaded from step 2 (provided by us), and that it is in the same directory as the Generate.py script. The directory must be named *weights*.
 
 This script (computation time ~24 hours) will result in 1 file (if no fragments are requested), or 7 files (if fragments are requested):
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
