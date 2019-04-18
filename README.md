@@ -19,7 +19,7 @@ For a quick structure generation right now just skip to the last step (step 4).
 
 | Dataset name                                                                        | Description                                                                |
 |-------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-|[Helix PS dataset](https://www.dropbox.com/s/33xwsnx50an6ft9/PS_Helix_500.csv?dl=0)  | Dataset of only helical structures' Phi/Psi angles                         |
+|[Helix PS dataset](https://www.dropbox.com/s/wdi7dxmshgwexuk/PS_Helix_500.csv?dl=0)  | Dataset of only helical structures' Phi/Psi angles                         |
 |[Helix PSC dataset](https://www.dropbox.com/s/3mg6edh933uhzu8/PSC_Helix_500.csv?dl=0)| Dataset of only helical structures' Phi/Psi angles and Constraints         |
 |[Sheet PSC dataset](https://www.dropbox.com/s/ws1zelxl2jm1n3j/PSC_Sheet_500.csv?dl=0)| Dataset of only sheet structures' Phi/Psi angles and Constraints           |
 |[Mix PSC dataset](https://www.dropbox.com/s/qz35dsgvs91wsjz/PSC_Mix_500.csv?dl=0)    | Dataset of mixed helix and sheet structures' Phi/Psi angles and Constraints|
