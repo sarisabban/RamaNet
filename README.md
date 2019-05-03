@@ -26,7 +26,7 @@ For a quick structure generation right now just skip to the last step (step 4).
 
 But if you want to replicate our work use the following command to generate the Machine Learning dataset from the Protein Databank Database (computation time ~168 hours and requires more than 128GB of free disk space):
 
-`python3 Database.py`
+`python3 RamaNet.py --dataset` or `python3 RamaNet.py -d`
 
 The default parameters for the Database.py script is isolating proteins between 80 and 150 amino acids, that have more helices and strands than loops (a rigid structure), and with an Rg value of less than 15 (compact structure). The script results in a dataset with the first column as the training example number, then the PDB ID of the file (and chain letter), then the angles *Phi/Psi* for each amino acid (PS dataset), an option is to also include the cst constraint values between carbon-alpha 1 and all other carbon-alphas (PSC dataset). *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same length and shape because the empty spaces are filled with zeros. If errors occur, that is fine, some protein files will cause errors (and they will be deleted/ignored), but the script should continue all the way to the end and result in a dataset file. 
 
@@ -61,21 +61,21 @@ It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate
 
 You can use the following command to train the neural network on the dataset (whether you use ours or generate your own):
 
-`python3 Generate.py --train` or `python3 Generate.py -t`
+`python3 RamaNet.py --train` or `python3 RamaNet.py -t`
 
 3. Use the following command to generate a novel protein structure, generate fragments from the Robetta server, download these fragment files, and analyse these fragments:
 
-`python3 Generate.py --fragments USERNAME`
+`python3 RamaNet.py --fragments USERNAME` or `python3 RamaNet.py -f USERNAME`
 
 USERNAME is the username at the Robetta server for fragment generation.
 
 4. Use the following command to only generate a novel protein structure without generating any fragments:
 
-`python3 Generate.py`
+`python3 RamaNet.py`
 
 Make sure you have the **weights** directory available, either from your training or downloaded from step 2 (provided by us), and that it is in the same directory as the Generate.py script. The directory must be named *weights*.
 
-This script (computation time ~24 hours) will result in 1 file (if no fragments are requested), or 7 files (if fragments are requested):
+This option (computation time ~24 hours) will result in 1 file (if no fragments are requested), or 7 files (if fragments are requested):
 * Topology file, which is basically just the structure of the backbone drawn using a sequence of Valine (**backbone.pdb**)
 * The final designed structure file - *RosettaDesign* (**structure.pdb**)
 * Abinitio input files (**structure.fasta**, **frags.200.3mers**, **frags.200.9mers**, **pre.psipred.ss2**)
