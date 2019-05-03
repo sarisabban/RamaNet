@@ -18,7 +18,7 @@ import tensorflow as tf
 from Bio import pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
-init()
+init(-out:level 0)
 
 parser = argparse.ArgumentParser(description='De Novo Protein Design Neural Network')
 parser.add_argument('-t', '--train', action='store_true', help='Train the neural network')
