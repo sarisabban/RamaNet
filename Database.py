@@ -8,7 +8,7 @@ import Bio.PDB
 import Bio.pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
-init()
+init(-out:level 0)
 
 def Database(TempDIR , FinalDIR):
 	''' Downloads the entire PDB database from https://www.wwpdb.org/, moves all files into one directory, then uncompresses all the files '''
