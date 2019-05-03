@@ -256,119 +256,88 @@ def Fragments(filename, username):
 	the RMSD vs Position PDF plot with the averaged fragment
 	RMSD printed in the plot
 	'''
-	#Make the 3-mer and 9-mer fragment files and the PSIPRED file using the Robetta server
 	pose = pose_from_pdb(filename)
 	sequence = pose.sequence()
-	#Post
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
-	payload = {	'UserName':		username,
-			'Email':		'',
-			'Notes':		'structure',
-			'Sequence':		sequence,
-			'Fasta':		'',
-			'Code':			'',
-			'ChemicalShifts':	'',
-			'NoeConstraints':	'',
-			'DipolarConstraints':	'',
-			'type':			'submit'}
+	payload = {	'UserName':				username,
+				'Email':				'',
+				'Notes':				'{}'.format(filename.split('.')[0]),
+				'Sequence':				sequence,
+				'Fasta':				'',
+				'Code':					'',
+				'ChemicalShifts':		'',
+				'NoeConstraints':		'',
+				'DipolarConstraints':	'',
+				'type':					'submit'}
 	session = requests.session()
-	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload , files=dict(foo='bar'))		
+	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload, files=dict(foo='bar'))
 	for line in response:
 		line = line.decode()
-		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line):
-			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">' , line)
+		if re.search('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line):
+			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line)
 	JobURL = 'http://www.robetta.org/' + JobID[0]
-	#Check
 	ID = JobID[0].split('=')
-	print('Job ID: ' + str(ID[1]))
+	print('Fragments submitted to Robetta server [http://robetta.org/fragmentqueue.jsp]')
+	print('Job ID: \u001b[32m{}\u001b[0m'.format(str(ID[1])))
 	while True:
 		Job = urllib.request.urlopen(JobURL)
-		jobdata = bs4.BeautifulSoup(Job , 'lxml')
+		jobdata = bs4.BeautifulSoup(Job, 'lxml')
 		status = jobdata.find('td', string='Status: ').find_next().text
 		if status == 'Complete':
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[32m{}\u001b[0m'.format(status))
 			break
 		else:
-			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M') , 'Status:' , status)
-			time.sleep(1800)
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[33m{}\u001b[0m'.format(status))
+			time.sleep(300)
 			continue
-	#Download
 	sequence = pose.sequence()
-	fasta = open('structure.fasta' , 'w')
+	fasta = open('structure.fasta', 'w')
 	fasta.write(sequence)
 	fasta.close()
 	time.sleep(1)
-	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_03_05.200_v1_3')
-	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/aat000_09_05.200_v1_3')
-	os.system('wget http://www.robetta.org/downloads/fragments/' + str(ID[1])  + '/t000_.psipred_ss2')
-	os.rename('aat000_03_05.200_v1_3' , 'frags.200.3mers')
-	os.rename('aat000_09_05.200_v1_3' , 'frags.200.9mers')
-	os.rename('t000_.psipred_ss2' , 'pre.psipred.ss2')
-	#Calculate the best fragment's RMSD at each position
-	frag = open('frags.200.9mers' , 'r')
-	rmsd = open('temp.dat' , 'w')
+	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_03_05.200_v1_3')
+	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_09_05.200_v1_3')
+	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/t000_.psipred_ss2')
+	os.rename('aat000_03_05.200_v1_3', 'frags.200.3mers')
+	os.rename('aat000_09_05.200_v1_3', 'frags.200.9mers')
+	os.rename('t000_.psipred_ss2', 'pre.psipred.ss2')
+	frag = open('frags.200.9mers', 'r')
+	data = open('RMSDvsPosition.dat', 'w')
+	AVG = []
 	for line in frag:
 		if line.lstrip().startswith('position:'):
 			line = line.split()
 			size = line[1]
 	frag.close()
 	count = 0
-	for x in range (int(size)):
+	for i in range(int(size)):
+		rmsd = []
 		count +=1
-		#Get the pose and make a copy of it to apply changes to
 		pose_copy = pyrosetta.Pose()
 		pose_copy.assign(pose)
-		#Setup frame list
 		frames = pyrosetta.rosetta.core.fragment.FrameList()
-		#Setup the 9-mer fragment (9-mer is better than 3-mer for this analysis)
 		fragset = pyrosetta.rosetta.core.fragment.ConstantLengthFragSet(9)
 		fragset.read_fragment_file('frags.200.9mers')
-		fragset.frames(count , frames)
-		#Setup the MoveMap
+		fragset.frames(count, frames)
 		movemap = MoveMap()
 		movemap.set_bb(True)
-		#Setup and apply the fragment inserting mover
 		for frame in frames:
-			for frag_num in range( 1 , frame.nr_frags() + 1 ):
-				frame.apply(movemap , frag_num , pose_copy)
-				#Measure the RMSD difference between the original pose and the new changed pose (the copy)
-				RMSD = rosetta.core.scoring.CA_rmsd(pose , pose_copy)
-				print(RMSD , '\t' , count)
-				rmsd.write(str(RMSD) + '\t' + str(count) + '\n')
-				#Reset the copy pose to original pose
+			for frag_num in range(1, frame.nr_frags()+1):
+				frame.apply(movemap, frag_num, pose_copy)
+				RMSD = rosetta.core.scoring.CA_rmsd(pose, pose_copy)
+				rmsd.append(RMSD)
+				lowest = min(rmsd)
 				pose_copy.assign(pose)
-	rmsd.close()
-	#Analyse the RMSD file to get the lowest RMSD for each position
-	data = open('RMSDvsPosition.dat' , 'w')
-	lowest = {} 				#Mapping group number -> lowest value found
-	for line in open('temp.dat'):
-		parts = line.split()
-		if len(parts) != 2:		#Only lines with two items on it
-			continue
-		first = float(parts[0])
-		second = int(parts[1])
-		if first == 0: 			#Skip line with 0.0 RMSD (this is an error from the 9-mer fragment file). I don't know why it happens
-			continue
-		if second not in lowest:
-			lowest[second] = first
-		else:
-			if first < lowest[second]:
-				lowest[second] = first
-	for position, rmsd in lowest.items():
-		#print(str(rmsd) + '\t' + str(position))
-		data.write(str(position) + '\t' + str(rmsd) + '\n')
+		AVG.append(lowest)
+		data.write(str(count)+'\t'+str(lowest)+'\n')
+		T = []
+		for t in range(int(lowest)+1):
+			T.append('-')
+		ticks = ''.join(T)
+		print('\u001b[31mPosition:\u001b[0m {}\t\u001b[31mLowest RMSD:\u001b[0m {}\t|{}'.format(count, round(lowest, 3), ticks))
 	data.close()
-	#Calculate the average RMSD of the fragments
-	data = open('RMSDvsPosition.dat' , 'r')
-	value = 0
-	for line in data:
-		line = line.split()
-		RMSD = float(line[1])
-		value = value + RMSD
-		count = int(line[0])
-	Average_RMSD = round(value / count , 2)
-	#Plot the results
-	gnuplot = open('gnuplot_sets' , 'w')
+	Average_RMSD = sum(AVG) / len(AVG)
+	gnuplot = open('gnuplot_sets', 'w')
 	gnuplot.write("""
 	reset\n
 	set terminal postscript\n
