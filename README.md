@@ -85,4 +85,5 @@ This option (computation time ~24 hours) will result in 1 file (if no fragments 
 
 ## References:
 When using these scripts kindly reference the following:
-* 
+
+[Sari Sabban, Mikhail Markovsky. (2019) RamaNet: Computational *De Novo* Protein Design using a Long Short-Term Memory Generative Adversarial Neural Network. BioRxiv 671552; doi: https://doi.org/10.1101/671552](https://www.biorxiv.org/content/10.1101/671552v1)
