@@ -17,6 +17,7 @@ RamaNet (after [Gopalasamudram Ramachandran](https://en.wikipedia.org/wiki/G._N.
 The script will generate one structure. It is advised to run this script and generate multiple structures and see which one has the lowest average RMSD fragments. But mind you, if you generate too many structures this might overwhelm the Robetta server by submitting and requesting too many fragment files, please be considerate and run this script once to generate one structure at a time only.
 
 ## How To Use:
+Here is a [video](https://youtu.be/tcHP0IUA7EM) that I made that explains this whole process.
 For a quick structure generation right now just skip to the last step (step 4).
 
 1. You do not need to generate the Machine Learning datasets, they are already provided and can be downloaded here:
