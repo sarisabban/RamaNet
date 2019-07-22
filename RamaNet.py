@@ -1322,8 +1322,11 @@ def Fragments(filename, username):
 		if status == 'Complete':
 			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[32m{}\u001b[0m'.format(status))
 			break
-		else:
+		elif status == 'Active':
 			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[33m{}\u001b[0m'.format(status))
+			time.sleep(180)
+		else:
+			print(datetime.datetime.now().strftime('%d %B %Y @ %H:%M'), 'Status:', '\u001b[31m{}\u001b[0m'.format(status))
 			time.sleep(300)
 			continue
 	sequence = pose.sequence()
@@ -1345,16 +1348,14 @@ def Fragments(filename, username):
 			line = line.split()
 			size = line[1]
 	frag.close()
-	count = 0
-	for i in range(int(size)):
+	for i in range(1, int(size)):
 		rmsd = []
-		count +=1
 		pose_copy = pyrosetta.Pose()
 		pose_copy.assign(pose)
 		frames = pyrosetta.rosetta.core.fragment.FrameList()
 		fragset = pyrosetta.rosetta.core.fragment.ConstantLengthFragSet(9)
 		fragset.read_fragment_file('frags.200.9mers')
-		fragset.frames(count, frames)
+		fragset.frames(i, frames)
 		movemap = MoveMap()
 		movemap.set_bb(True)
 		for frame in frames:
@@ -1365,12 +1366,8 @@ def Fragments(filename, username):
 				lowest = min(rmsd)
 				pose_copy.assign(pose)
 		AVG.append(lowest)
-		data.write(str(count)+'\t'+str(lowest)+'\n')
-		T = []
-		for t in range(int(lowest)+1):
-			T.append('-')
-		ticks = ''.join(T)
-		print('\u001b[31mPosition:\u001b[0m {}\t\u001b[31mLowest RMSD:\u001b[0m {}\t|{}'.format(count, round(lowest, 3), ticks))
+		data.write(str(i)+'\t'+str(lowest)+'\n')
+		print('\u001b[31mPosition:\u001b[0m {}\t\u001b[31mLowest RMSD:\u001b[0m {}\t|{}'.format(i, round(lowest, 3), '-'*int(lowest)))
 	data.close()
 	Average_RMSD = sum(AVG) / len(AVG)
 	gnuplot = open('gnuplot_sets', 'w')
@@ -1399,7 +1396,6 @@ def Fragments(filename, username):
 	gnuplot.close()
 	os.system('gnuplot < gnuplot_sets')
 	os.remove('gnuplot_sets')
-	os.remove('temp.dat')
 	return(Average_RMSD)
 
 def LSTM_GAN(choice):
