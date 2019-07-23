@@ -1745,6 +1745,53 @@ def LSTM_GAN(choice):
 			except:
 				continue
 
+def FoldPDB_PSC(filename, order):
+	newfile = open(filename, 'r')
+	phiout = []
+	psiout = []
+	cstout = []
+	for line in newfile:
+		line = line.strip().split(';')
+		phiout.append(float(line[0]))
+		psiout.append(float(line[1]))
+		cstout.append(float(line[2]))
+	phiout = [x*360.0 for x in phiout]
+	psiout = [x*360.0 for x in psiout]
+	psiout = [x*88.731 for x in psiout]
+	data = (phiout, psiout, cstout)
+	size = int(len(data[0]))
+	Vs = list()
+	for numb in range(size): Vs.append('V')
+	sequence = ''.join(Vs)
+	pose = pose_from_sequence(sequence)
+	PHI = data[0]
+	PSI = data[1]
+	CST = data[2]
+	count = 1
+	for P, S in zip(PHI, PSI):
+		pose.set_phi(count, float(P))
+		pose.set_psi(count, float(S))
+		count += 1
+	atom = 1
+	for cst in CST:
+		line = 'AtomPair CA 1 CA '+str(atom)+' GAUSSIANFUNC '+str(cst)+' 1.0\n'
+		thefile = open('constraints.cst', 'a')
+		thefile.write(line)
+		thefile.close()
+		atom += 1
+	constraints = pyrosetta.rosetta.protocols.constraint_movers.ConstraintSetMover()
+	constraints.constraint_file('constraints.cst')
+	constraints.add_constraints(True)
+	constraints.apply(pose)
+	scorefxn = get_fa_scorefxn()
+	relaxC = pyrosetta.rosetta.protocols.relax.FastRelax()
+	relaxC.set_scorefxn(scorefxn)
+	relaxC.constrain_relax_to_start_coords(True)
+	relaxC.constrain_coords(True)
+	if order == True: relaxC.apply(pose)
+	pose.dump_pdb('backbone.pdb')
+	os.remove('constraints.cst')
+			
 def main():
 	if args.dataset:
 		D = Dataset()
