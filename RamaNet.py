@@ -37,7 +37,7 @@ import tensorflow as tf
 import Bio.pairwise2
 from pyrosetta import *
 from pyrosetta.toolbox import *
-init('-out:level 0')
+init('-out:level 0 -no_his_his_pairE -extrachi_cutoff 1 -multi_cool_annealer 10 -ex1 -ex2 -use_input_sc')
 
 parser = argparse.ArgumentParser(description='De Novo Protein Design Neural Network')
 parser.add_argument('-d', '--dataset', action='store_true', help='Build the dataset')
@@ -1065,155 +1065,106 @@ class Dataset():
 
 class RosettaDesign(object):
 	def __init__(self, filename):
-		''' Generate the resfile '''
+		''' Generate the required files and sets up the weights. '''
+		AminoAcid = {	'A':129, 'P':159, 'N':195, 'H':224,
+						'V':174, 'Y':263, 'C':167, 'K':236,
+						'I':197, 'F':240, 'Q':225, 'S':155,
+						'L':201, 'W':285, 'E':223, 'T':172,
+						'M':224, 'R':274, 'G':104, 'D':193}
 		self.filename = filename
 		parser = Bio.PDB.PDBParser()
 		structure = parser.get_structure('{}'.format(filename), filename)
 		dssp = Bio.PDB.DSSP(structure[0], filename, acc_array='Wilke')
 		sasalist = []
-		for x in dssp:
-			if x[1] == 'A':
-				sasa = 129*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'V':
-				sasa = 174*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'I':
-				sasa = 197*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'L':
-				sasa = 201*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'M':
-				sasa = 224*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'P':
-				sasa = 159*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'Y':
-				sasa = 263*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'F':
-				sasa = 240*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'W':
-				sasa = 285*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'R':
-				sasa = 274*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'N':
-				sasa = 195*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'C':
-				sasa = 167*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'Q':
-				sasa = 225*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'E':
-				sasa = 223*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'G':
-				sasa = 104*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'H':
-				sasa = 224*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'K':
-				sasa = 236*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'S':
-				sasa = 155*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'T':
-				sasa = 172*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			elif x[1] == 'D':
-				sasa = 193*(x[3])
-				if sasa <= 25:			sasa = 'C'
-				elif 25 < sasa < 40:	sasa = 'B'
-				elif sasa >= 40:		sasa = 'S'
-			if x[2] == 'G' or x[2] == 'H' or x[2] == 'I':	ss = 'H'
-			elif x[2] == 'B' or x[2] == 'E':				ss = 'S'
-			elif x[2] == 'S' or x[2] == 'T' or x[2] == '-':	ss = 'L'
-			sasalist.append((x[0], x[1], ss, sasa))
-		resfile = open('resfile', 'a')
-		resfile.write('NATRO\nSTART\n')
+		for aa in dssp:
+			sasa = AminoAcid[aa[1]]*aa[3]
+			if sasa <= 25:      sasa = 'C'
+			elif 25 < sasa < 40:sasa = 'B'
+			elif sasa >= 40:    sasa = 'S'
+			if aa[2] == 'G' or aa[2] == 'H' or aa[2] == 'I':   ss = 'H'
+			elif aa[2] == 'B' or aa[2] == 'E':                 ss = 'S'
+			elif aa[2] == 'S' or aa[2] == 'T' or aa[2] == '-': ss = 'L'
+			sasalist.append((aa[0], aa[1], ss, sasa))
+		resfile = open('.resfile', 'a')
+		#resfile.write('NATRO\nEX 1\nEX 2\nUSE_INPUT_SC\n')
+		resfile.write('START\n')
 		for n, r, a, s in sasalist:
-			if s == 'S' and a == 'L':
-				line = '{} A PIKAA PGNQSTDERKH\n'.format(n)
-				resfile.write(line)
-			elif s == 'S' and a == 'H':
-				line = '{} A PIKAA QEKH\n'.format(n)
-				resfile.write(line)
-			elif s == 'S' and a == 'S':
-				line = '{} A PIKAA QTY\n'.format(n)
-				resfile.write(line)
-			elif s == 'B' and a == 'L':
-				line = '{} A PIKAA AVILFYWGNQSTPDEKR\n'.format(n)
-				resfile.write(line)
-			elif s == 'B' and a == 'H':
-				line = '{} A PIKAA AVILWQEKFM\n'.format(n)
-				resfile.write(line)
-			elif s == 'B' and a == 'S':
-				line = '{} A PIKAA AVILFYWQTM\n'.format(n)
-				resfile.write(line)
-			elif s == 'C' and a == 'L':
-				line = '{} A PIKAA AVILPFWM\n'.format(n)
-				resfile.write(line)
-			elif s == 'C' and a == 'H':
-				line = '{} A PIKAA AVILFWM\n'.format(n)
-				resfile.write(line)
-			elif s == 'C' and a == 'S':
-				line = '{} A PIKAA AVILFWM\n'.format(n)
-				resfile.write(line)
+			if s == 'S' and a == 'L':   line = '{} A PIKAA PGNQSTDERKH\n'.format(n)
+			elif s == 'S' and a == 'H': line = '{} A PIKAA EHKQR\n'.format(n)
+			elif s == 'S' and a == 'S': line = '{} A PIKAA DEGHKNPQRST\n'.format(n)
+			elif s == 'B' and a == 'L': line = '{} A PIKAA ADEFGHIKLMNPQRSTVWY\n'.format(n)
+			elif s == 'B' and a == 'H': line = '{} A PIKAA ADEHIKLMNQRSTVWY\n'.format(n)
+			elif s == 'B' and a == 'S': line = '{} A PIKAA DEFHIKLMNQRSTVWY\n'.format(n)
+			elif s == 'C' and a == 'L': line = '{} A PIKAA AFGILMPVWY\n'.format(n)
+			elif s == 'C' and a == 'H': line = '{} A PIKAA AFILMVWY\n'.format(n)
+			elif s == 'C' and a == 'S': line = '{} A PIKAA FILMVWY\n'.format(n)
+			resfile.write(line)
 		resfile.close()
 		self.SASA = sasalist
+		# aa_composition file
+		with open('.comp', 'w')as comp:
+			comp.write("""
+				PENALTY_DEFINITION
+				PROPERTIES AROMATIC
+				NOT_PROPERTIES POLAR CHARGED
+				FRACTION 0.1
+				PENALTIES 100 0 100
+				DELTA_START -1
+				DELTA_END 1
+				BEFORE_FUNCTION CONSTANT
+				AFTER_FUNCTION CONSTANT
+				END_PENALTY_DEFINITION
+				""")
+		# netcharge file
+		with open('.charge', 'w')as comp:
+			comp.write("""
+				DESIRED_CHARGE 0
+				PENALTIES_CHARGE_RANGE -1 1
+				PENALTIES 10 0 10
+				BEFORE_FUNCTION QUADRATIC
+				AFTER_FUNCTION QUADRATIC
+				""")
+		self.pose = pose_from_pdb(self.filename)
+		# pushback aa_composition
+		comp = pyrosetta.rosetta.protocols.aa_composition.AddCompositionConstraintMover()
+		comp.create_constraint_from_file('.comp')
+		comp.apply(self.pose)
+		# pushback netcharge
+		charge = pyrosetta.rosetta.protocols.aa_composition.AddNetChargeConstraintMover()
+		charge.create_constraint_from_file('.charge')
+		charge.apply(self.pose)
+		self.starting_pose = Pose()
+		self.starting_pose.assign(self.pose)
+		self.scorefxn = get_fa_scorefxn()
+		self.scorefxn_G = get_fa_scorefxn()
+		AAcomp      = pyrosetta.rosetta.core.scoring.ScoreType.aa_composition
+		NETq        = pyrosetta.rosetta.core.scoring.ScoreType.netcharge
+		AArep       = pyrosetta.rosetta.core.scoring.ScoreType.aa_repeat
+		ASPpen      = pyrosetta.rosetta.core.scoring.ScoreType.aspartimide_penalty
+		HBnet       = pyrosetta.rosetta.core.scoring.ScoreType.hbnet
+		MHCep       = pyrosetta.rosetta.core.scoring.ScoreType.mhc_epitope
+		VOIDpen     = pyrosetta.rosetta.core.scoring.ScoreType.voids_penalty
+		ABurUnsatPen= pyrosetta.rosetta.core.scoring.ScoreType.approximate_buried_unsat_penalty
+		BurUnsatPen = pyrosetta.rosetta.core.scoring.ScoreType.buried_unsatisfied_penalty
+		#self.scorefxn_G.set_weight(AAcomp,      1.00)
+		#self.scorefxn_G.set_weight(NETq,        1.00)
+		#self.scorefxn_G.set_weight(HBnet,       1.00)
+		#self.scorefxn_G.set_weight(VOIDpen,     0.10)
+		self.scorefxn_G.set_weight(AArep,       1.00)
+		self.scorefxn_G.set_weight(ASPpen,      1.00)
+		self.scorefxn_G.set_weight(MHCep,       0.00)
+		self.scorefxn_G.set_weight(BurUnsatPen, 1.00)
+		self.scorefxn_G.set_weight(ABurUnsatPen,5.00)
+		self.relax = pyrosetta.rosetta.protocols.relax.FastRelax()
+		self.relax.set_scorefxn(self.scorefxn)
 	def __del__(self):
-		''' Remove the resfile '''
-		os.remove('resfile')
+		''' Remove the resfile. '''
+		os.remove('.resfile')
+		os.remove('.comp')
+		os.remove('.charge')
 		for f in glob.glob('f[il]xbb.fasc'): os.remove(f)
 	def choose(self):
-		''' Choose the lowest scoring structure '''
+		''' Choose the lowest scoring structure. '''
 		try:	scorefile = open('fixbb.fasc', 'r')
 		except:	scorefile = open('flxbb.fasc', 'r')
 		score = 0
@@ -1230,39 +1181,33 @@ class RosettaDesign(object):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
 		amino acid sequence while maintaining a fixed backbone.
-		Generates the structure.pdb file
+		Generates the structure.pdb file.
 		'''
-		pose = pose_from_pdb(self.filename)
-		starting_pose = Pose()
-		starting_pose.assign(pose)
-		scorefxn = get_fa_scorefxn()
-		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-		relax.set_scorefxn(scorefxn)
-		packtask = standard_packer_task(pose)
-		pyrosetta.rosetta.core.pack.task.parse_resfile(pose, packtask, 'resfile')
-		fixbb = pyrosetta.rosetta.protocols.minimization_packing.PackRotamersMover(scorefxn, packtask, 10)
-		job = PyJobDistributor('fixbb', 100, scorefxn)
-		job.native_pose = starting_pose
+		resfile = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('.resfile')
+		task = pyrosetta.rosetta.core.pack.task.TaskFactory()
+		task.push_back(resfile)
+		movemap = MoveMap()
+		movemap.set_bb(False)
+		movemap.set_chi(True)
+		fixbb = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()
+		fixbb.set_task_factory(task)
+		fixbb.set_movemap(movemap)
+		fixbb.set_scorefxn(self.scorefxn_G)
+		self.relax.apply(self.pose)
+		job = PyJobDistributor('fixbb', 100, self.scorefxn)
+		job.native_pose = self.starting_pose
 		while not job.job_complete:
-			pose.assign(starting_pose)
-			relax.apply(pose)
-			fixbb.apply(pose)
-			relax.apply(pose)
-			job.output_decoy(pose)
-		self.choose()
+			self.pose.assign(self.starting_pose)
+			fixbb.apply(self.pose)
+			self.relax.apply(self.pose)
+			job.output_decoy(self.pose)
 	def flxbb(self):
 		'''
 		Performs the RosettaDesign protocol to change a structure's
 		amino acid sequence while allowing for a flexible backbone.
-		Generates the structure.pdb file
+		Generates the structure.pdb file.
 		'''
-		pose = pose_from_pdb(self.filename)
-		starting_pose = Pose()
-		starting_pose.assign(pose)
-		scorefxn = get_fa_scorefxn()
-		relax = pyrosetta.rosetta.protocols.relax.FastRelax()
-		relax.set_scorefxn(scorefxn)
-		resfile = rosetta.core.pack.task.operation.ReadResfile('resfile')
+		resfile = pyrosetta.rosetta.core.pack.task.operation.ReadResfile('.resfile')
 		task = pyrosetta.rosetta.core.pack.task.TaskFactory()
 		task.push_back(resfile)
 		movemap = MoveMap()
@@ -1271,16 +1216,15 @@ class RosettaDesign(object):
 		flxbb = pyrosetta.rosetta.protocols.denovo_design.movers.FastDesign()
 		flxbb.set_task_factory(task)
 		flxbb.set_movemap(movemap)
-		flxbb.set_scorefxn(scorefxn)
-		job = PyJobDistributor('flxbb', 100, scorefxn)
-		job.native_pose = starting_pose
+		flxbb.set_scorefxn(self.scorefxn_G)
+		self.relax.apply(self.pose)
+		job = PyJobDistributor('flxbb', 100, self.scorefxn)
+		job.native_pose = self.starting_pose
 		while not job.job_complete:
-			pose.assign(starting_pose)
-			relax.apply(pose)
-			flxbb.apply(pose)
-			relax.apply(pose)
-			job.output_decoy(pose)
-		self.choose()
+			self.pose.assign(self.starting_pose)
+			flxbb.apply(self.pose)
+			self.relax.apply(self.pose)
+			job.output_decoy(self.pose)
 
 def Fragments(filename, username):
 	'''
@@ -1295,16 +1239,16 @@ def Fragments(filename, username):
 	pose = pose_from_pdb(filename)
 	sequence = pose.sequence()
 	web = requests.get('http://www.robetta.org/fragmentsubmit.jsp')
-	payload = {	'UserName':				username,
-				'Email':				'',
-				'Notes':				'{}'.format(filename.split('.')[0]),
-				'Sequence':				sequence,
-				'Fasta':				'',
-				'Code':					'',
-				'ChemicalShifts':		'',
-				'NoeConstraints':		'',
-				'DipolarConstraints':	'',
-				'type':					'submit'}
+	payload = {	'UserName':          username,
+				'Email':             '',
+				'Notes':             '{}'.format(filename.split('.')[0]),
+				'Sequence':          sequence,
+				'Fasta':             '',
+				'Code':              '',
+				'ChemicalShifts':    '',
+				'NoeConstraints':    '',
+				'DipolarConstraints':'',
+				'type':              'submit'}
 	session = requests.session()
 	response = session.post('http://www.robetta.org/fragmentsubmit.jsp', data=payload, files=dict(foo='bar'))
 	for line in response:
@@ -1313,6 +1257,43 @@ def Fragments(filename, username):
 			JobID = re.findall('<a href="(fragmentqueue.jsp\?id=[0-9].*)">', line)
 	JobURL = 'http://www.robetta.org/' + JobID[0]
 	ID = JobID[0].split('=')
+	URL = 'http://robetta.org/fragmentqueue.jsp'
+	page = urllib.request.urlopen(URL)
+	data = bs4.BeautifulSoup(page, 'lxml')
+	table = data.find('table', {'cellpadding':'3'})
+	info = table.findAll('tr')
+	print('''\u001b[32m{}
+________      ______      __________
+___  __ \________  /________  /__  /______ _
+__  /_/ /  __ \_  __ \  _ \  __/  __/  __ `/
+_  _, _// /_/ /  /_/ /  __/ /_ / /_ / /_/ /
+/_/ |_| \____//_.___/\___/\__/ \__/ \__,_/
+\u001b[34mRobetta.org Protein Structure Prediction Server\u001b[0m
+'''.format('-'*57))
+	print('\u001b[35m|JobID | Status | Length | User\u001b[0m')
+	print('\u001b[33m-------------------------------------\u001b[0m')
+	for item in info:
+		try:
+			job =      item.findAll('td')[0].findAll('a')[0].getText()
+			status =   item.findAll('td')[1].getText()
+			username = item.findAll('td')[3].getText()
+			length =   item.findAll('td')[4].getText()
+			target =   item.findAll('td')[5].getText()
+		except: continue
+		j = '\u001b[36m{}\u001b[33m'.format(job)
+		s = '\u001b[36m{}\u001b[33m'.format(status)
+		n = '\u001b[36m{}\u001b[33m'.format(username)
+		l = '\u001b[36m{}\u001b[33m'.format(length)
+		t = '\u001b[36m{}\u001b[33m'.format(target)
+		if status == 'Queued':
+			s =   '\u001b[31m{}\u001b[33m'.format(status)
+			TBL = '\u001b[32m|{} |{}  | {}\t | {}\u001b[0m'.format(j, s, l, n)
+		elif status == 'Active':
+			s =   '\u001b[32m{}\u001b[33m'.format(status)
+			TBL = '\u001b[33m|{} |{}  | {}\t | {}\u001b[0m'.format(j, s, l, n)
+		else:
+			TBL = '\u001b[33m|{} |{}| {}\t | {}\u001b[0m'.format(j, s, l, n)
+		print(TBL)
 	print('Fragments submitted to Robetta server [http://robetta.org/fragmentqueue.jsp]')
 	print('Job ID: \u001b[32m{}\u001b[0m'.format(str(ID[1])))
 	while True:
@@ -1334,9 +1315,12 @@ def Fragments(filename, username):
 	fasta.write(sequence)
 	fasta.close()
 	time.sleep(1)
-	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_03_05.200_v1_3')
-	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_09_05.200_v1_3')
-	os.system('wget http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/t000_.psipred_ss2')
+	print('Downloading 3mer fragment file ...')
+	os.system('wget -q http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_03_05.200_v1_3')
+	print('Downloading 9mer fragment file ...')
+	os.system('wget -q http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/aat000_09_05.200_v1_3')
+	print('Downloading PSIPRED file ...')
+	os.system('wget -q http://www.robetta.org/downloads/fragments/'+str(ID[1])+'/t000_.psipred_ss2')
 	os.rename('aat000_03_05.200_v1_3', 'frags.200.3mers')
 	os.rename('aat000_09_05.200_v1_3', 'frags.200.9mers')
 	os.rename('t000_.psipred_ss2', 'pre.psipred.ss2')
@@ -1392,10 +1376,11 @@ def Fragments(filename, username):
 	set label 'Average RMSD = {}' at graph 0.01 , graph 0.95 tc lt 7 font 'curior 12'\n
 	plot 'RMSDvsPosition.dat' with boxes\n
 	exit
-	""".format(str(Average_RMSD)))
+	""".format(str(round(Average_RMSD, 3))))
 	gnuplot.close()
 	os.system('gnuplot < gnuplot_sets')
 	os.remove('gnuplot_sets')
+	print('\u001b[34mAverage RMSD:\u001b[0m {}'.format(round(Average_RMSD, 3)))
 	return(Average_RMSD)
 
 def LSTM_GAN(choice):
