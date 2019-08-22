@@ -1332,7 +1332,7 @@ _  _, _// /_/ /  /_/ /  __/ /_ / /_ / /_/ /
 			line = line.split()
 			size = line[1]
 	frag.close()
-	for i in range(1, int(size)):
+	for i in range(1, int(size)+1):
 		rmsd = []
 		pose_copy = pyrosetta.Pose()
 		pose_copy.assign(pose)
