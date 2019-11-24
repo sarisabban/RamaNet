@@ -1428,6 +1428,7 @@ def LSTM_GAN(choice):
 		atom = 1
 		scorefxn = get_fa_scorefxn()
 		relax = pyrosetta.rosetta.protocols.relax.FastRelax(scorefxn)
+		IHM = pyrosetta.rosetta.protocols.rbsegment_relax.IdealizeHelicesMover()
 		pose.dump_pdb('temp1.pdb')
 		structure = Bio.PDB.PDBParser().get_structure('temp1', 'temp1.pdb')
 		dssp = Bio.PDB.DSSP(structure[0], 'temp1.pdb', acc_array='Wilke')
@@ -1454,19 +1455,8 @@ def LSTM_GAN(choice):
 			io.save('temp2.pdb')
 			os.remove('temp1.pdb')
 			pose = pose_from_pdb('temp2.pdb')
-			# Just relax once is enough
 			relax.apply(pose)
-			# Simulated annealing relax (not nessesary)
-			'''
-			pose_R = Pose()
-			for i in range(20):
-				pose_R.assign(pose)
-				score_B = scorefxn(pose)
-				relax.apply(pose_R)
-				score_A = scorefxn(pose_R)
-				if score_A < score_B:
-					pose.assign(pose_R)
-			'''
+			IHM.apply(pose)
 			pose.dump_pdb('backbone.pdb')
 			os.remove('temp2.pdb')
 		except:
@@ -1484,6 +1474,7 @@ def LSTM_GAN(choice):
 		CST = []
 		SASA = []
 		for aa in dssp:
+			if aa[2] == 'I': choice = False
 			if aa[2] == 'G' or aa[2] == 'H' or aa[2] == 'I': SSname = 'H'
 			elif aa[2] == 'B' or aa[2] == 'E': SSname = 'S'
 			else: SSname = 'L'
@@ -1508,18 +1499,12 @@ def LSTM_GAN(choice):
 			elif aa[1]=='S' : sasa=155*(aa[3])
 			elif aa[1]=='T' : sasa=172*(aa[3])
 			elif aa[1]=='D' : sasa=193*(aa[3])
-			if sasa <= 15 and (SSname == 'H' or SSname == 'S'):
-				layer = 'C'
-			elif 15 < sasa < 60 and (SSname == 'H' or SSname == 'S'):
-				layer = 'B'
-			elif sasa >= 60 and (SSname == 'H' or SSname == 'S'):
-				layer = 'S'
-			if sasa <= 25 and SSname == 'L':
-				layer = 'C'
-			elif 25 < sasa < 40 and SSname == 'L':
-				layer = 'B'
-			elif sasa >= 40 and SSname == 'L':
-				layer = 'S'
+			if sasa <= 15 and (SSname == 'H' or SSname == 'S'):       layer = 'C'
+			elif 15 < sasa < 60 and (SSname == 'H' or SSname == 'S'): layer = 'B'
+			elif sasa >= 60 and (SSname == 'H' or SSname == 'S'):     layer = 'S'
+			if sasa <= 25 and SSname == 'L':                          layer = 'C'
+			elif 25 < sasa < 40 and SSname == 'L':                    layer = 'B'
+			elif sasa >= 40 and SSname == 'L':                        layer = 'S'
 			SASA.append(layer)
 			residue1 = chain[0]
 			residue2 = chain[aa[0]-1]
@@ -1545,19 +1530,15 @@ def LSTM_GAN(choice):
 		H = SS.count('H')
 		S = SS.count('S')
 		L = SS.count('L')
-		if len(SS) < 80:
-			choice = False
-		if H+S < L:
-			choice = False
+		if len(SS) < 80: choice = False
+		if H+S < L:      choice = False
 		Surface = SASA.count('S')
 		Boundary = SASA.count('B')
 		Core = SASA.count('C')
 		percent = (Core*100)/(Surface+Boundary+Core)
-		if percent < 15:
-			choice = False
+		if percent < 20: choice = False
 		MaxCST = max(CST)
-		if MaxCST > 88:
-			choice = False
+		if MaxCST > 88:  choice = False
 		return(choice)
 	class ModelConfig(object):
 		def __init__(self):
@@ -1705,11 +1686,12 @@ def LSTM_GAN(choice):
 					saver.restore(sess, ckpt_path)
 					fake_data = test_model.predict(sess, SEQ_LEN)
 				np.savetxt(f'prediction.txt', np.array(fake_data).reshape((MAX_ATOMS, 2)), delimiter=';')
-	if choice == 'train':
-		Run(choice)
+	if choice == 'train': Run(choice)
 	elif choice == 'predict':
-		while True:
-			try:
+		with open('counts', 'a') as f:
+			count = 0
+			while True:
+				count += 1
 				Run(choice)
 				newfile = open('prediction.txt', 'r')
 				phiout = []
@@ -1724,11 +1706,12 @@ def LSTM_GAN(choice):
 				FoldPDB_PS(data)
 				os.remove('prediction.txt')
 				if Filter('backbone.pdb'):
+					print('success {}'.format(count))
+					f.write('success {}\n'.format(str(count)))
 					break
 				else:
 					os.remove('backbone.pdb')
-			except:
-				continue
+					print('fail {}'.format(count))
 
 def FoldPDB_PSC(filename, order):
 	newfile = open(filename, 'r')
