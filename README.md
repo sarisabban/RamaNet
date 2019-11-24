@@ -56,7 +56,7 @@ It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate
 
 | Weights name                                                                          | Description                                                |
 |---------------------------------------------------------------------------------------|------------------------------------------------------------|
-|[Helix PS Weights](https://www.dropbox.com/s/ojv1ugryj4tqpnm/PS_Helix_Weights.zip?dl=0)| Neural network weights generated from the Helix PS dataset |
+|[Helix PS Weights](https://www.dropbox.com/s/gby9ed49qpost6l/PS_Helix_Weights.zip?dl=0)| Neural network weights generated from the Helix PS dataset |
 
 If you wish, you can use the following command to train the neural network on the dataset (whether you use our dataset or generate your own):
 
