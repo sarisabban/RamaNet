@@ -1,4 +1,7 @@
 # RamaNet
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3755343.svg)](https://doi.org/10.5281/zenodo.3755343)
+
 Preforms *De novo* helical protein design using machine learning and PyRosetta to generate a novel synthetic protein structure.
 
 ## Requirements:
