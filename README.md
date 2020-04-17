@@ -2,6 +2,9 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3755343.svg)](https://doi.org/10.5281/zenodo.3755343)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/sarisabban/RamaNet/graphs/commit-activity)
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
+
 
 Preforms *De novo* helical protein design using machine learning and PyRosetta to generate a novel synthetic protein structure.
 
