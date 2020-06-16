@@ -42,7 +42,7 @@ init('-out:level 0 -no_his_his_pairE -extrachi_cutoff 1 -multi_cool_annealer 10 
 parser = argparse.ArgumentParser(description='De Novo Protein Design Neural Network')
 parser.add_argument('-d', '--dataset', action='store_true', help='Build the dataset')
 parser.add_argument('-t', '--train', action='store_true', help='Train the neural network')
-parser.add_argument('-f', '--fragments', action='store_true', help='Generate a structure and get its fragments from the Robetta server, you must specify a username')
+parser.add_argument('-f', '--fragments', nargs='+', metavar='', help='Generate a structure and get its fragments from the Robetta server, you must specify a username')
 args = parser.parse_args()
 
 class Dataset():
@@ -1773,7 +1773,7 @@ def main():
 		RD = RosettaDesign()
 		RD.flxbb('backbone.pdb')
 		print('\x1b[32m[+] Generating fragments\x1b[0m')
-		Fragments('structure.pdb', sys.argv[1])
+		Fragments('structure.pdb', sys.argv[2])
 		print('\x1b[32m[+] Structure generated\x1b[0m')
 	else:
 		print('\x1b[32m[+] Generating a structure\x1b[0m')
