@@ -92,4 +92,4 @@ When using these scripts kindly reference the following:
 
 * [Sari Sabban, Mikhail Markovsky. (2020) RamaNet: Computational *De Novo* Protein Design using a Long Short-Term Memory Generative Neural Network. BioRxiv 671552; doi: https://doi.org/10.1101/671552](https://www.biorxiv.org/content/10.1101/671552v4)
 
-* [Sabban S and Markovsky M. (2020) RamaNet: Computational de novo helical protein backbone design using a long short-term memory generative neural network. F1000Research 2020, 9:298](https://doi.org/10.12688/f1000research.22907.2)
+* [Sabban S and Markovsky M. (2020) RamaNet: Computational *de novo* helical protein backbone design using a long short-term memory generative neural network. F1000Research 2020, 9:298](https://doi.org/10.12688/f1000research.22907.2)
