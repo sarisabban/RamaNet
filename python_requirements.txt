@@ -1,0 +1,10 @@
+biopython
+pandas
+numpy
+matplotlib
+tqdm
+beautifulsoup4
+lxml
+scipy
+keras
+tensorflow

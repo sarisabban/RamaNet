@@ -1,0 +1,4 @@
+git
+dssp
+gnuplot
+python3-pip
