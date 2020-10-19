@@ -1713,6 +1713,7 @@ def LSTM(choice):
 #					os.remove('backbone.pdb')
 #					print('fail {}'.format(count))
 				try:
+					assert os.path.exists('backbone.pdb')
 					if Filter('backbone.pdb'):
 						print('success {}'.format(count))
 						f.write('success {}\n'.format(str(count)))
