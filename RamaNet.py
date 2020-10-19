@@ -1705,13 +1705,24 @@ def LSTM(choice):
 				data = (phiout, psiout)
 				FoldPDB_PS(data)
 				os.remove('prediction.txt')
-				if Filter('backbone.pdb'):
-					print('success {}'.format(count))
-					f.write('success {}\n'.format(str(count)))
-					break
-				else:
-					os.remove('backbone.pdb')
-					print('fail {}'.format(count))
+#				if Filter('backbone.pdb'):
+#					print('success {}'.format(count))
+#					f.write('success {}\n'.format(str(count)))
+#					break
+#				else:
+#					os.remove('backbone.pdb')
+#					print('fail {}'.format(count))
+				try:
+					if Filter('backbone.pdb'):
+						print('success {}'.format(count))
+						f.write('success {}\n'.format(str(count)))
+						break
+					else:
+						os.remove('backbone.pdb')
+						print('fail {}'.format(count))
+				except:
+						os.remove('backbone.pdb')
+						print('fail {}'.format(count))
 
 def FoldPDB_PSC(filename, order):
 	newfile = open(filename, 'r')
