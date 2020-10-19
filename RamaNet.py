@@ -1383,7 +1383,7 @@ _  _, _// /_/ /  /_/ /  __/ /_ / /_ / /_/ /
 	print('\u001b[34mAverage RMSD:\u001b[0m {}'.format(round(Average_RMSD, 3)))
 	return(Average_RMSD)
 
-def LSTM_GAN(choice):
+def LSTM(choice):
 	'''
 	A neural network that designs a helical protein topology using phi/psi angels
 	The neural network was chosen and optamised by Mikhail Markovsky.
@@ -1765,10 +1765,10 @@ def main():
 		D = Dataset()
 		D.build
 	elif args.train:
-		LSTM_GAN('train')
+		LSTM('train')
 	elif args.fragments:
 		print('\x1b[32m[+] Generating a structure\x1b[0m')
-		LSTM_GAN('predict')
+		LSTM('predict')
 		print('\x1b[32m[+] Designing the structure\x1b[0m')
 		RD = RosettaDesign()
 		RD.flxbb('backbone.pdb')
@@ -1777,7 +1777,7 @@ def main():
 		print('\x1b[32m[+] Structure generated\x1b[0m')
 	else:
 		print('\x1b[32m[+] Generating a structure\x1b[0m')
-		LSTM_GAN('predict')
+		LSTM('predict')
 		print('\x1b[32m[+] Designing the structure\x1b[0m')
 		RD = RosettaDesign()
 		RD.flxbb('backbone.pdb')
