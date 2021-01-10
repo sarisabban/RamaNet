@@ -1021,93 +1021,78 @@ class BACKBONE():
 				if self.SQM('backbone.pdb')[1] == True:
 					os.system('mv backbone.pdb {}.pdb'.format(str(i)))
 				else: os.remove('backbone.pdb')
-	def SQM(self, filename):
-		'''
-		Structure Quality Metric:
-		Calculates the ratio of helices and sheets to loops, the radius of
-		gyration, and the percent of amino acids comprising the structure core.
-		Then averages their values. Returns a value between 0.0-1.0 where 1.0
-		is a good structure.
-		'''
-		parser = Bio.PDB.PDBParser()
-		structure = parser.get_structure('{}'.format(filename), filename)
-		dssp = Bio.PDB.DSSP(structure[0], filename, acc_array='Wilke')
-		ppb = Bio.PDB.Polypeptide.PPBuilder()
-		chain = ppb.build_peptides(structure, aa_only=False)[0]
-		AminoAcid = {	'A':129, 'P':159, 'N':195, 'H':224,
-						'V':174, 'Y':263, 'C':167, 'K':236,
-						'I':197, 'F':240, 'Q':225, 'S':155,
-						'L':201, 'W':285, 'E':223, 'T':172,
-						'M':224, 'R':274, 'G':104, 'D':193}
-		sec_struct = []
-		SASA = []
-		Ca_distances = []
-		for aa in dssp:
-			if   aa[2] == 'G' or aa[2] == 'H' or aa[2] == 'I': ss = 'H'
-			elif aa[2] == 'B' or aa[2] == 'E':                 ss = 'S'
-			elif aa[2] == 'S' or aa[2] == 'T' or aa[2] == '-': ss = 'L'
-			sec_struct.append(ss)
-			sasa = AminoAcid[aa[1]]*aa[3]
-			if sasa <= 25:      sasa = 'C'
-			elif 25 < sasa < 40:sasa = 'B'
-			elif sasa >= 40:    sasa = 'S'
-			SASA.append(sasa)
-			residue1 = chain[0]
-			residue2 = chain[aa[0]-1]
-			atom1 = residue1['CA']
-			atom2 = residue2['CA']
-			Ca_distances.append(atom1-atom2)
-		''' Secondary structure measurement '''
-		H = len([x for x in sec_struct if x == 'H'])
-		S = len([x for x in sec_struct if x == 'S'])
-		L = len([x for x in sec_struct if x == 'L'])
-		total = len(sec_struct)
-		SS = (H+S)/total
-		''' SASA measurement '''
-		surface = len([x for x in SASA if x == 'S'])
-		boundery = len([x for x in SASA if x == 'B'])
-		core = len([x for x in SASA if x == 'C'])
-		total = len(SASA)
-		percent = (core*100)/total
-		ratio = percent/20 #Cutoff point 20%
-		if ratio > 1: Core = 1.0
-		else: Core = ratio
-		''' Radius of gyration measurement '''
-		coord = list()
-		mass = list()
-		Structure = open(filename, 'r')
-		for line in Structure:
-			try:
-				line = line.split()
-				x = float(line[6])
-				y = float(line[7])
-				z = float(line[8])
-				coord.append([x, y, z])
-				if   line[-1] == 'C': mass.append(12.0107)
-				elif line[-1] == 'O': mass.append(15.9994)
-				elif line[-1] == 'N': mass.append(14.0067)
-				elif line[-1] == 'S': mass.append(32.065)
-			except: pass
-		xm = [(m*i, m*j, m*k) for (i, j, k), m in zip(coord, mass)]
-		tmass = sum(mass)
-		rr = sum(mi*i + mj*j + mk*k for (i, j, k),(mi, mj, mk) in zip(coord,xm))
-		mm = sum((sum(i)/tmass)**2 for i in zip(*xm))
-		rg = math.sqrt(rr/tmass-mm)
-		ratio = 15/rg #Cutoff point 15 angstroms
-		if ratio > 1: Rg = 1.0
-		else: Rg = ratio
-		''' The metric '''
-		Items = [SS, Rg, Core]
-		TheSum = sum(Items)
-		TheTotal = len(Items)
-		TheMetric = TheSum/TheTotal
-		''' The choice '''
-		choice = True
-		if len(sec_struct) < 80:   choice = False
-		if H+S < L:                choice = False
-		if percent < 15:           choice = False
-		if max(Ca_distances) > 89: choice = False
-		return((round(TheMetric, 5), choice))
+		def SQM(self, filename):
+			'''
+			Structure Quality Metric:
+			Calculates the ratio of helices and sheets to loops, the the percent of amino
+			acids comprising the structure core, and the radius of gyration as values
+			between 0.0-1.0, it then averages the three values. Returns a value between
+			0.0-1.0 where good structure > 0.8
+			'''
+			parser = Bio.PDB.PDBParser()
+			structure = parser.get_structure('{}'.format(filename), filename)
+			dssp = Bio.PDB.DSSP(structure[0], filename, acc_array='Wilke')
+			AminoAcid = {	'A':129, 'P':159, 'N':195, 'H':224,
+							'V':174, 'Y':263, 'C':167, 'K':236,
+							'I':197, 'F':240, 'Q':225, 'S':155,
+							'L':201, 'W':285, 'E':223, 'T':172,
+							'M':224, 'R':274, 'G':104, 'D':193}
+			sec_struct = []
+			SASA = []
+			for aa in dssp:
+				if   aa[2] == 'G' or aa[2] == 'H' or aa[2] == 'I': ss = 'H'
+				elif aa[2] == 'B' or aa[2] == 'E':                 ss = 'S'
+				elif aa[2] == 'S' or aa[2] == 'T' or aa[2] == '-': ss = 'L'
+				sec_struct.append(ss)
+				sasa = AminoAcid[aa[1]]*aa[3]
+				if sasa <= 25:      sasa = 'C'
+				elif 25 < sasa < 40:sasa = 'B'
+				elif sasa >= 40:    sasa = 'S'
+				SASA.append(sasa)
+			''' Secondary structure measurement '''
+			H = len([x for x in sec_struct if x == 'H'])
+			S = len([x for x in sec_struct if x == 'S'])
+			L = len([x for x in sec_struct if x == 'L'])
+			total = len(sec_struct)
+			ratio = (H+S)/total
+			limit = 1
+			slope = 10
+			bias  = 0.5
+			SS = limit/(1+np.exp(slope*(bias-ratio)))
+			''' SASA measurement '''
+			surface = len([x for x in SASA if x == 'S'])
+			boundery = len([x for x in SASA if x == 'B'])
+			in_core = len([x for x in SASA if x == 'C'])
+			total = len(SASA)
+			percent = (in_core*100)/total
+			Core = (2.50662/math.sqrt(2*(math.pi)))*math.exp(-((percent-30)**2)/100)
+			''' Radius of gyration measurement '''
+			coord = list()
+			mass = list()
+			Structure = open(filename, 'r')
+			for line in Structure:
+				try:
+					line = line.split()
+					x = float(line[6])
+					y = float(line[7])
+					z = float(line[8])
+					coord.append([x, y, z])
+					if   line[-1] == 'C': mass.append(12.0107)
+					elif line[-1] == 'O': mass.append(15.9994)
+					elif line[-1] == 'N': mass.append(14.0067)
+					elif line[-1] == 'S': mass.append(32.065)
+				except: pass
+			xm = [(m*i, m*j, m*k) for (i, j, k), m in zip(coord, mass)]
+			tmass = sum(mass)
+			rr = sum(mi*i + mj*j + mk*k for (i, j, k), (mi, mj, mk) in zip(coord, xm))
+			mm = sum((sum(i)/tmass)**2 for i in zip(*xm))
+			rg = math.sqrt(rr/tmass-mm)
+			Rg = (2.50662/math.sqrt(2*(math.pi)))*math.exp(-((rg-12)**2)/40)
+			''' The metric '''
+			TheMetric = sum([SS, Core, Rg])/3
+			if TheMetric <= 0.8: choice = False
+			else: choice = True
+			return(round(TheMetric, 5), choice)
 	def fold(self, P, S, C):
 		''' Folds a structure using phi/psi angles and contact map '''
 		P = np.ndarray.tolist(P)
