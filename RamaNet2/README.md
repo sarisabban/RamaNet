@@ -1,7 +1,5 @@
-# WORK IN PROGRESS !!!
-
 # RamaNet
-Preforms *De novo* protein design using machine learning and PyRosetta to generate a novel synthetic protein structure.
+Preforms *De novo* protein design using Deep Learning and PyRosetta to generate a novel synthetic protein structure.
 
 ## Requirements:
 1. Install [PyRosetta](http://www.pyrosetta.org) as the website describes.
@@ -14,78 +12,131 @@ Preforms *De novo* protein design using machine learning and PyRosetta to genera
 `git clone https://github.com/sarisabban/RamaNet.git`
 
 ## Description:
-RamaNet (after [Gopalasamudram Ramachandran](https://en.wikipedia.org/wiki/G._N._Ramachandran)) is a script that uses Machine Learning (a GAN network) and PyRosetta to preform *De Novo* Protein Design (from the beginning) i.e. generate and design a synthetic protein structure completely computationally. The script autonomously generates a topology (random every time) then designs a sequence that fits the designed topology using the [RosettaDesign](https://github.com/sarisabban/rosettadesign) protocol. It then submits the structure's FASTA sequence to the [Robetta](http://www.robetta.org/) server to generate and download the custom fragments files in preparation for evaluation using the *Abinitio* folding simulation. The *Abinitio* protocol script can be found [here](https://github.com/sarisabban/RosettaAbinitio). From the fragments files it calculates the RMSD for each fragment's position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the *Abinitio* folding simulation might go (good quality fragments have an average RMSD < 2Å), if the fragments are of bad quality the script will repeat the desgining process up to 10 times before it quits.
+RamaNet (after [Gopalasamudram Ramachandran](https://en.wikipedia.org/wiki/G._N._Ramachandran)) is a script that uses Deep Learning (GAN and LSTM networks) along with PyRosetta to preform *De Novo* Protein Design (from the beginning) i.e. generate and design a synthetic protein structure completely computationally. The script autonomously generates a backbone topology (random every time) then designs a sequence that fits the generated backbone. It then generates fragments for the structure using its FASTA sequence in preparation for evaluation using the *Abinitio* folding simulation. The *Abinitio* protocol script can be found [here](https://github.com/sarisabban/RosettaAbinitio). From the fragments files it calculates the RMSD for each fragment's position on the designed structure and plots an (RMSD vs Position) graph to indicate how good the *Abinitio* folding simulation might go (good quality fragments have an average RMSD < 2Å).
 
 ## How To Use:
-Here is a [video](https://youtu.be/tcHP0IUA7EM) that explains this whole process.
+Here is a [video]() that explains this whole process.
 For quick structure generation skip to the last step (step 3).
 
-1. You do not need to generate the Machine Learning dataset, it is already provided and can be downloaded here:
+1. You do not need to generate the Deep Learning datasets, it is already provided and can be downloaded here:
 
-|Dataset name                                                                    |Description                                                                                                                                                                               |
-|--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|[PS+CM dataset](https://www.dropbox.com/s/jmo52kfqy8qf1az/PS%2BCM.tar.bz2?dl=0) |Dataset of all protein structure Φ and Ψ angles and contact map                                                                                                                           |
-|[Fragment dataset]()|Dataset of amino acid sequences, secondary structures, SASA, phi, psi, and omega angle features from the vall.jul19.2011 database (used by Rosetta for fragment generation) in .csv format|
-|[Sequence dataset]()|Dataset of amino acid sequences !!!! INCOMPLETE |
+|Dataset name                                                                       |Description                                                                                                                                                                               |
+|-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|[Backbone dataset](https://www.dropbox.com/s/jmo52kfqy8qf1az/PS%2BCM.tar.bz2?dl=0) |Dataset of protein structure Φ and Ψ angles (PS.csv) and contact maps (CM.csv). The downloaded file needs to be uncompressed.                                                             |
+|[Sequence dataset]()|Dataset of amino acid sequences|
+|[Fragment dataset](https://www.dropbox.com/s/yj1jz82st3gapil/Fragments.csv?dl=0)   |Dataset of amino acid sequences, secondary structures, SASA, phi, psi, and omega angle features from the vall.jul19.2011 database (used by Rosetta for fragment generation) in .csv format|
 
-But if you want to replicate our work use the following command to generate the Machine Learning dataset from the Protein Databank Database, computation time ~168 hours and requires more than 128GB of free disk space.
+If you want to replicate our work use the following steps:
 
-The default parameters for generating the dataset is isolating proteins between 80 and 150 amino acids, that have more helices and sheets than loops (rigid structures), and with an Rg (radius of gyration) value of less than 15Å (compact structures). The script results in a dataset with the first column as the training example number, then the PDB ID of the file with the chain letter, then the angles *Φ/Ψ/Ω* and the *Cα* distances between carbon-alpha 1 and all other carbon-alphas (hence the PSOC name in the dataset). *0.0* indicates a position with no amino acids, not all protein structures have the same length, but the entire dataset does have the same shape because the empty spaces are filled with zeros. If errors occur, that is fine, some protein files will cause errors (they will be deleted/ignored), but the script should continue all the way to the end and result in a .csv dataset file.
+1.1 These are are steps to generate the **backbone** dataset (computation time ~168 hours and requires more than 128GB of free disk space):
+
+The default parameters for generating the dataset is isolating proteins between 80 and 150 amino acids, that have more helices and sheets than loops (rigid structures), and with an Rg (radius of gyration) value of less than 15Å (compact structures). The script results in two dataset (.csv) files: the PS.csv file with each structure's *Φ/Ψ* angles, and the CM.csv file with each structure's contact map (values 0 < x <= 12Å). Both datasets have the first column as the PDB ID followed by the respective data. If errors occur, that is fine, some protein files will cause errors (they will be deleted/ignored), but the script should continue all the way to the end and result in both .csv dataset files.
 
 The dataset generation protocol is as follows:
-* Download the PDB database
-* Extract files
-* Remove non-protein structures
-* Remove structures less than or larger than a specified amino acid length
-* Remove structure with broken chains
-* Remove structures that have loops that are larger than a specific length
-* Renumber structures' amino acids
-* Remove structures that are below a specified Radius of Gyration value
+* Download the PDB database.
+* Extract files.
+* Remove non-protein structures.
+* Remove structures less than or larger than a specified amino acid length.
+* Remove structure with broken chains.
+* Remove structures that have loops that are larger than a specific length.
+* Renumber structures' amino acids.
+* Remove structures that are below a specified Radius of Gyration value.
 * ########## --- HUMAN EYE FILTERING --- ##########
-* Clean every structure in the database
-* Make a list of all paths (if next step is performed in a high performance computer HPC)
-* Generate HPC submission file (PBS job scheduler)
-* Relax each structure multiple times (on a HPC or a local computer), this is to augment the examples
-* Tabulate all structures' residues' Φ/Ψ/Ω angles and Cα distances.
-* Get the largest Cα distance value from the PSOC dataset.
+* Clean every structure in the database.
+* Make a list of all paths (if next step is performed in a high performance computer HPC).
+* Generate HPC submission file (PBS job scheduler).
+* Relax each structure multiple times (on a HPC or a local computer), this is to augment the examples.
+* Generate the Φ/Ψ angles (PS.csv) dataset file and the contact map (CM.csv) dataset file.
+* Get the largest contact map value from the CM.csv dataset file.
+* Combine, normalise, vectorise, and serialise the PS.csv and CM.csv datasets into a PS+CM.h5 file.
 
 Each of these points can be switched on or off using this strange system we developed. So to run the first section of the protocol use this command:
 
-`python3 RamaNet.py --dataset 111111110000000 DIRECTORY` or `python3 RamaNet.py -d 111111110000000 DIRECTORY`
+`python3 RamaNet.py --dataset 11111111000000000000 DIRECTORY` or `python3 RamaNet.py -d 11111111000000000000 DIRECTORY`
 
 After the human eye filtering step you can choose what to run, whether to generate the nessesary files to augment the examples through relaxation onto a HPC or just run the augmentation locally, and to generate the Φ/Ψ/Ω angles and Cα distances dataset. The switches are ordered as in the written protocol above.
 
-`python3 RamaNet.py --dataset 000000001001011 DIRECTORY` or `python3 RamaNet.py -d 000000001001011 DIRECTORY`
+`python3 RamaNet.py --dataset 00000000100000001110 DIRECTORY` or `python3 RamaNet.py -d 00000000100000001110 DIRECTORY`
 
-This system should give you control to run individual step at will.
+This system should give you control to run individual steps at will.
 
-The most difficult step is the *Human Eye Filtering* step which requires a person to filter out all the unwanted structures manually before moving onto cleaning up each structure and augmenting the data. Unwanted structures such as non-compact structures, structures with more loops than helices and sheets, weird looking structures are all deleted. Also, this is the step to separate structures and collect the ones with traits that you need; the the dataset is augmented (preferably on a HPC to save time). The separation was done manually.
+The most difficult step is the *Human Eye Filtering* step which requires a person to filter out all the unwanted structures manually before moving onto cleaning up each structure and augmenting the data. Unwanted structures such as non-compact structures, structures with more loops than helices and sheets, weird looking structures are all deleted. Also, this is the step to separate structures and collect the ones with the traits that you need; then the dataset is augmented (preferably on a HPC to save time).
 
 It is best to [contact me](mailto:sari.sabban@gmail.com) if you want to generate your own dataset and I will walk you through the protocol, it is not difficult, but works on individual basis.
 
+1.2 These are are steps to generate the **sequence** dataset (computation time ~168 hours and requires more than 128GB of free disk space):
+
+* Download the PDB database.
+* Extract files.
+* Remove non-protein structures.
+* Remove structure with broken chains.
+* Renumber structures' amino acids.
+* Generate the sequence dataset (AsPSa.csv) and contact map (M.csv) file.
+* Generate headers for both .csv files.
+* Fill gaps in both .csv files with zeros (padding).
+* Combine, normalise, vectorise, and serialise the AsPSa.csv and M.csv datasets into a AsPSaM.h5 file.
+
+To complete all these steps use the following command:
+
+`python3 RamaNet.py --dataset 11111111100011110001 DIRECTORY` or `python3 RamaNet.py -d 11111111100011110001 DIRECTORY`
+
+1.3 These are are steps to generate the **fragment** dataset:
+
+* Manually get the vall.jul19.2011 file from Rosetta (or PyRosetta) and make sure it is in the same directory as this script.
+* Generate the fragment dataset (Fragment.csv).
+* Normalise, vectorise, and serialise the Fragments.csv dataset into a Frag_X.h5 (features) and Frag_Y.h5 (labels) files.
+
+To complete all these steps use the following command:
+
+`python3 RamaNet.py --frag` or `python3 RamaNet.py -f`
+
 2. You do not need to train the neural network because it is already trained and the weights file is available here:
 
-| Weights name                                                                          | Description                                                |
-|---------------------------------------------------------------------------------------|------------------------------------------------------------|
-|[PSOC Weights]()                                                                       | Neural network weights 
+| Weights name                                                                          | Description                    |
+|---------------------------------------------------------------------------------------|--------------------------------|
+|[Backbone Weights]()                                                                   | Backbone neural network weights|
+|[Sequence Weights]()                                                                   | Sequence neural network weights|
+|[Fragment Weights]()                                                                   | Fragment neural network weights|
 
-You can use the following command to train the neural network on the dataset (whether you use our dataset or generate your own):
+You can use the following command to train the neural network on the dataset (whether you use our dataset or generate your own).
 
-`python3 RamaNet.py --train` or `python3 RamaNet.py -t`
+Train on backbone dataset:
 
-3. Use the following command to generate a novel protein backbone, design the sequence for the backbone, generate fragments from the Robetta server, download them, and analyse the fragment quality:
+`python3 RamaNet.py ----TrainBack` or `python3 RamaNet.py -tb`
 
-`python3 RamaNet.py --fragments USERNAME` or `python3 RamaNet.py -f USERNAME`
+Train on sequence dataset:
 
-USERNAME is the username at the Robetta server for fragment generation.
+`python3 RamaNet.py ----TrainSeq` or `python3 RamaNet.py -ts`
 
-Make sure you have the **weights** file available, either from your training or downloaded from step 2 (provided by us), and that it is in the same directory as the RamaNet2.py script. The file must be named *weights*.
+Train on fragment dataset:
 
-Computation time ~3 hours and will result in 7 files:
-* The topology file, which is basically just the structure of the backbone constructed using a sequence of Valines (**backbone.pdb**)
-* The final designed structure file - *RosettaDesign* (**structure.pdb**)
-* Abinitio input files (**structure.fasta**, **frags.200.3mers**, **frags.200.9mers**, **pre.psipred.ss2**)
-* Fragment quality plot (**plot_frag.pdf**)
+`python3 RamaNet.py ----TrainFrag` or `python3 RamaNet.py -tf`
+
+
+
+
+
+
+
+#TODO
+
+* Vectorise sequence dataset tp get AsPSaM.h5
+* ADD NEW VIDEO (line 18)
+* optimise networks
+* Train networks
+* make weights available
+* write README file's generate instructions
+
+
+
+
+
+
+
+
+
+
+
 
 ## References:
 When using these scripts kindly reference the following:
