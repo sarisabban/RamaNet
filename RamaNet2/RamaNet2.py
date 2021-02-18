@@ -535,7 +535,7 @@ class Dataset():
 								data.write(File + ',' + M + '\n')
 							os.system('mv {} ./Completed'.format(TheFile))
 						except:
-								passos.system('mv {} ./Error_NotEqual'\
+								os.system('mv {} ./Error_NotEqual'\
 								.format(TheFile))
 				else: os.system('mv {} ./Error_Small'.format(TheFile))
 			except: passos.system('mv {} ./Error_Broken'.format(TheFile))
