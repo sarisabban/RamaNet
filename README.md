@@ -31,7 +31,7 @@ For quick structure generation skip to the last steps (steps 3 and 4).
 
 | Dataset name                                                                        | Description                                                                |
 |-------------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-|[Helix PS dataset](https://www.dropbox.com/s/wdi7dxmshgwexuk/PS_Helix_500.csv?dl=0)  | Dataset of only helical structures' Φ/Ψ angles                         |
+|[Helix PS dataset](https://doi.org/10.5281/zenodo.4643781)                           | Dataset of only helical structures' Φ/Ψ angles                         |
 
 But if you want to replicate our work use the following command to generate the Machine Learning dataset from the Protein Databank Database (computation time ~168 hours and requires more than 128GB of free disk space):
 
