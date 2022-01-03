@@ -8,6 +8,8 @@
 
 Preforms *De novo* helical protein design using machine learning and PyRosetta to generate a novel synthetic protein structure.
 
+![Alt Text](results.gif)
+
 ## Requirements:
 1. Install [PyRosetta](http://www.pyrosetta.org) as the website describes.
 2. Use the following command (in GNU/Linux) to update your system and install all necessary programs and python modules for this script to run successfully:
