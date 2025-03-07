@@ -22,9 +22,9 @@ For quick structure generation skip to the last step (step 3).
 
 |Dataset name                                                                       |Description                                                                                                                                                                               |
 |-----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|[Backbone dataset](https://www.dropbox.com/s/jmo52kfqy8qf1az/PS%2BCM.tar.bz2?dl=0) |Dataset of protein structure Φ and Ψ angles (PS.csv) and contact maps (CM.csv). The downloaded file needs to be uncompressed.                                                             |
+|[Backbone dataset](https://doi.org/10.5281/zenodo.14991111) |Dataset of protein structure Φ and Ψ angles (PS.csv) and contact maps (CM.csv). The downloaded file needs to be uncompressed.                                                             |
 |[Sequence dataset]()|Dataset of amino acid sequences|
-|[Fragment dataset](https://www.dropbox.com/s/yj1jz82st3gapil/Fragments.csv?dl=0)   |Dataset of amino acid sequences, secondary structures, SASA, phi, psi, and omega angle features from the vall.jul19.2011 database (used by Rosetta for fragment generation) in .csv format|
+|[Fragment dataset](https://doi.org/10.5281/zenodo.14991142)   |Dataset of amino acid sequences, secondary structures, SASA, phi, psi, and omega angle features from the vall.jul19.2011 database (used by Rosetta for fragment generation) in .csv format|
 
 If you want to replicate our work use the following steps:
 
@@ -143,4 +143,4 @@ When using these scripts kindly reference the following:
 
 * [Sari Sabban, Mikhail Markovsky. (2019) RamaNet: Computational *De Novo* Protein Design using a Long Short-Term Memory Generative Adversarial Neural Network. BioRxiv 671552; doi: https://doi.org/10.1101/671552](https://www.biorxiv.org/content/10.1101/671552v4)
 
-* [Sabban S and Markovsky M. RamaNet: Computational de novo helical protein backbone design using a long short-term memory generative adversarial neural network. F1000Research 2020, 9:298](https://doi.org/10.12688/f1000research.22907.3)
+* [Sabban S and Markovsky M. RamaNet: Computational de novo helical protein backbone design using a long short-term memory generative adversarial neural network. F1000Research 2020, 9:298](https://f1000research.com/articles/9-298/v3)
